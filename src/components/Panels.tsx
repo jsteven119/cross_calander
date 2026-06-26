@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import type { GTMActivity, Conflict, GTMData, Region } from '@/lib/types'
 import { STATUS_STYLE, RISK_STYLE, TYPE_STYLE, fmtDate, fmtRelTime } from '@/lib/ui'
 
@@ -27,94 +28,173 @@ export function KpiStrip({ data, conflicts, issues }: { data: GTMData; conflicts
   )
 }
 
-// ─── 충돌 감지 패널 ──────────────────────────────
-export function ConflictPanel({ conflicts, onPick }: { conflicts: Conflict[]; onPick: (product: string) => void }) {
+// ─── 알림·모니터링 통합 패널 (탭) ──────────────────────────────
+interface AlertsPanelProps {
+  conflicts: Conflict[]
+  issues: GTMActivity[]
+  changes: GTMActivity[]
+  onPick: (product: string) => void
+  onSelect: (a: GTMActivity) => void
+}
+
+export function AlertsPanel({ conflicts, issues, changes, onPick, onSelect }: AlertsPanelProps) {
+  const [tab, setTab] = useState<'conflict' | 'issue' | 'change'>('issue')
+
+  const tabs = [
+    {
+      id: 'conflict' as const,
+      label: '충돌',
+      icon: '⚡',
+      count: conflicts.length,
+      activeColor: 'border-orange-500 text-orange-600',
+      badgeColor: conflicts.length ? 'bg-orange-100 text-orange-700' : 'bg-gray-100 text-gray-400',
+    },
+    {
+      id: 'issue' as const,
+      label: '이슈',
+      icon: '⚠',
+      count: issues.length,
+      activeColor: 'border-red-500 text-red-600',
+      badgeColor: issues.length ? 'bg-red-100 text-red-700' : 'bg-gray-100 text-gray-400',
+    },
+    {
+      id: 'change' as const,
+      label: '변경',
+      icon: '↻',
+      count: changes.length,
+      activeColor: 'border-blue-500 text-blue-600',
+      badgeColor: 'bg-blue-100 text-blue-700',
+    },
+  ]
+
   return (
-    <div className="bg-white border border-gray-200 rounded-lg">
-      <div className="px-4 py-2.5 border-b border-gray-100 flex items-center gap-2">
-        <span className="text-orange-500">⚡</span>
-        <h3 className="text-sm font-bold text-gray-800">상품 충돌 감지</h3>
-        <span className="ml-auto text-2xs bg-orange-100 text-orange-700 rounded-full px-2 py-0.5">{conflicts.length}</span>
-      </div>
-      <div className="divide-y divide-gray-50 max-h-72 overflow-y-auto">
-        {conflicts.length === 0 && (
-          <p className="px-4 py-6 text-center text-xs text-gray-400">겹치는 주력상품 일정 없음 ✓</p>
-        )}
-        {conflicts.map(c => (
+    <div className="bg-white border border-gray-200 rounded-xl shadow-sm overflow-hidden">
+      {/* 탭 헤더 */}
+      <div className="flex border-b border-gray-200 bg-gray-50/60">
+        {tabs.map(t => (
           <button
-            key={c.product}
-            onClick={() => onPick(c.product)}
-            className="w-full text-left px-4 py-2.5 hover:bg-orange-50 transition-colors"
+            key={t.id}
+            onClick={() => setTab(t.id)}
+            className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 text-xs font-medium transition-all border-b-2
+              ${tab === t.id
+                ? `bg-white ${t.activeColor}`
+                : 'border-transparent text-gray-400 hover:text-gray-600 hover:bg-gray-100/60'
+              }`}
           >
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-gray-800 truncate">{c.product}</span>
-              <span className="text-2xs text-orange-600 shrink-0 ml-2">{fmtDate(c.overlapStart)}~{fmtDate(c.overlapEnd)}</span>
-            </div>
-            <div className="flex flex-wrap gap-1 mt-1">
-              {c.regions.map(r => (
-                <span key={r} className="text-2xs bg-gray-100 text-gray-600 rounded px-1.5 py-0.5">{r}</span>
-              ))}
-            </div>
+            <span>{t.icon}</span>
+            <span>{t.label}</span>
+            <span className={`text-2xs rounded-full px-1.5 py-0.5 font-semibold ${t.badgeColor}`}>
+              {t.count}
+            </span>
           </button>
         ))}
       </div>
-    </div>
-  )
-}
 
-// ─── 이슈/리스크 보드 ──────────────────────────────
-export function IssueBoard({ issues, onSelect }: { issues: GTMActivity[]; onSelect: (a: GTMActivity) => void }) {
-  return (
-    <div className="bg-white border border-gray-200 rounded-lg">
-      <div className="px-4 py-2.5 border-b border-gray-100 flex items-center gap-2">
-        <span className="text-red-500">⚠</span>
-        <h3 className="text-sm font-bold text-gray-800">이슈 · 리스크</h3>
-        <span className="ml-auto text-2xs bg-red-100 text-red-700 rounded-full px-2 py-0.5">{issues.length}</span>
-      </div>
-      <div className="divide-y divide-gray-50 max-h-72 overflow-y-auto">
-        {issues.length === 0 && (
-          <p className="px-4 py-6 text-center text-xs text-gray-400">등록된 이슈 없음 ✓</p>
-        )}
-        {issues.map(a => {
-          const risk = RISK_STYLE[a.riskLevel] ?? RISK_STYLE['하']
-          return (
-            <button key={a.id} onClick={() => onSelect(a)} className="w-full text-left px-4 py-2.5 hover:bg-red-50 transition-colors">
-              <div className="flex items-center gap-2">
-                <span className={`text-2xs font-bold rounded px-1.5 py-0.5 shrink-0 ${risk.bg} ${risk.text}`}>{risk.label}</span>
-                <span className="text-2xs text-gray-400 shrink-0">{a.region}</span>
-                <span className="text-xs font-medium text-gray-700 truncate">{a.product}</span>
+      {/* 탭 콘텐츠 */}
+      <div className="max-h-80 overflow-y-auto">
+        {/* 충돌 탭 */}
+        {tab === 'conflict' && (
+          <>
+            {conflicts.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-10 gap-2 text-gray-300">
+                <span className="text-3xl">✓</span>
+                <p className="text-xs text-gray-400">겹치는 주력상품 일정 없음</p>
               </div>
-              <p className="text-2xs text-gray-500 mt-0.5 pl-1 truncate">{a.issue}</p>
-            </button>
-          )
-        })}
+            ) : conflicts.map(c => (
+              <button
+                key={c.product}
+                onClick={() => onPick(c.product)}
+                className="w-full text-left px-4 py-3 hover:bg-orange-50 transition-colors border-b border-gray-50 last:border-b-0 group"
+              >
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <p className="text-xs font-semibold text-gray-800 group-hover:text-orange-700 transition-colors">{c.product}</p>
+                    <div className="flex flex-wrap gap-1 mt-1">
+                      {c.regions.map(r => (
+                        <span key={r} className="text-2xs bg-orange-50 text-orange-600 border border-orange-100 rounded-full px-2 py-0.5">{r}</span>
+                      ))}
+                    </div>
+                  </div>
+                  <span className="text-2xs text-orange-500 shrink-0 mt-0.5 font-medium">{fmtDate(c.overlapStart)}~{fmtDate(c.overlapEnd)}</span>
+                </div>
+              </button>
+            ))}
+          </>
+        )}
+
+        {/* 이슈 탭 */}
+        {tab === 'issue' && (
+          <>
+            {issues.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-10 gap-2">
+                <span className="text-3xl text-gray-200">✓</span>
+                <p className="text-xs text-gray-400">등록된 이슈 없음</p>
+              </div>
+            ) : issues.map(a => {
+              const risk = RISK_STYLE[a.riskLevel] ?? RISK_STYLE['하']
+              return (
+                <button
+                  key={a.id}
+                  onClick={() => onSelect(a)}
+                  className="w-full text-left px-4 py-3 hover:bg-red-50/60 transition-colors border-b border-gray-50 last:border-b-0 group"
+                >
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className={`text-2xs font-bold rounded-full px-2 py-0.5 shrink-0 ${risk.bg} ${risk.text}`}>{risk.label}</span>
+                    <span className="text-2xs text-gray-400 shrink-0">{a.region} · {a.brand}</span>
+                    {a.hero && <span className="text-2xs text-pink-500 shrink-0">★</span>}
+                  </div>
+                  <p className="text-xs font-medium text-gray-700 truncate group-hover:text-red-700 transition-colors">{a.product}</p>
+                  <p className="text-2xs text-gray-400 mt-0.5 truncate">{a.issue}</p>
+                </button>
+              )
+            })}
+          </>
+        )}
+
+        {/* 변경 탭 */}
+        {tab === 'change' && (
+          <>
+            {changes.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-10 gap-2">
+                <span className="text-3xl text-gray-200">↻</span>
+                <p className="text-xs text-gray-400">최근 변경 없음</p>
+              </div>
+            ) : changes.map(a => {
+              const st = STATUS_STYLE[a.status]
+              return (
+                <button
+                  key={a.id}
+                  onClick={() => onSelect(a)}
+                  className="w-full text-left px-4 py-3 hover:bg-blue-50/50 transition-colors border-b border-gray-50 last:border-b-0 group"
+                >
+                  <div className="flex items-center justify-between gap-2 mb-1">
+                    <span className="text-2xs text-gray-400">{a.region} · {a.brand}</span>
+                    <span className="text-2xs text-gray-400 shrink-0">{fmtRelTime(a.updatedAt)}</span>
+                  </div>
+                  <p className="text-xs font-medium text-gray-700 truncate group-hover:text-blue-700 transition-colors">{a.title}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <span className={`text-2xs rounded-full px-2 py-0.5 ${st.bg} ${st.text}`}>{a.status}</span>
+                    {a.updatedBy && <span className="text-2xs text-gray-400">by {a.updatedBy}</span>}
+                  </div>
+                </button>
+              )
+            })}
+          </>
+        )}
       </div>
     </div>
   )
 }
 
-// ─── 실시간 변경 피드 ──────────────────────────────
+// ─── (레거시 export — GTMDashboard 외부 사용 시 호환용) ─────────
+export function ConflictPanel({ conflicts, onPick }: { conflicts: Conflict[]; onPick: (product: string) => void }) {
+  return <AlertsPanel conflicts={conflicts} issues={[]} changes={[]} onPick={onPick} onSelect={() => {}} />
+}
+export function IssueBoard({ issues, onSelect }: { issues: GTMActivity[]; onSelect: (a: GTMActivity) => void }) {
+  return <AlertsPanel conflicts={[]} issues={issues} changes={[]} onPick={() => {}} onSelect={onSelect} />
+}
 export function ChangeFeed({ changes, onSelect }: { changes: GTMActivity[]; onSelect: (a: GTMActivity) => void }) {
-  return (
-    <div className="bg-white border border-gray-200 rounded-lg">
-      <div className="px-4 py-2.5 border-b border-gray-100 flex items-center gap-2">
-        <span className="text-blue-500">↻</span>
-        <h3 className="text-sm font-bold text-gray-800">최근 변경</h3>
-      </div>
-      <div className="divide-y divide-gray-50 max-h-72 overflow-y-auto">
-        {changes.map(a => (
-          <button key={a.id} onClick={() => onSelect(a)} className="w-full text-left px-4 py-2 hover:bg-blue-50 transition-colors">
-            <div className="flex items-center justify-between gap-2">
-              <span className="text-xs text-gray-700 truncate">
-                <span className="font-medium">{a.team || a.region}</span> · {a.title}
-              </span>
-              <span className="text-2xs text-gray-400 shrink-0">{fmtRelTime(a.updatedAt)}</span>
-            </div>
-          </button>
-        ))}
-      </div>
-    </div>
-  )
+  return <AlertsPanel conflicts={[]} issues={[]} changes={changes} onPick={() => {}} onSelect={onSelect} />
 }
 
 // ─── 권역별 EC 프로모션 보드 (권역 × EC채널 정리) ──────────────

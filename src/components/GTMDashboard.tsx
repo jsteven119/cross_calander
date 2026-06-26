@@ -5,7 +5,7 @@ import type { GTMData, GTMActivity } from '@/lib/types'
 import { detectConflicts, collectIssues, recentChanges } from '@/lib/conflicts'
 import { SwimlaneTimeline } from './SwimlaneTimeline'
 import { Filters, FilterState, emptyFilter } from './Filters'
-import { KpiStrip, ConflictPanel, IssueBoard, ChangeFeed, DetailDrawer, ActivityTable, ECPromotionBoard } from './Panels'
+import { KpiStrip, AlertsPanel, DetailDrawer, ActivityTable, ECPromotionBoard } from './Panels'
 import { SeedingBoard } from './SeedingBoard'
 
 export function GTMDashboard({ data, lastRefreshed }: { data: GTMData; lastRefreshed: Date }) {
@@ -82,15 +82,19 @@ export function GTMDashboard({ data, lastRefreshed }: { data: GTMData; lastRefre
           {/* 인플루언서 시딩 스케줄 */}
           <SeedingBoard />
 
-          {/* 활동 목록 + 사이드 패널 */}
+          {/* 활동 목록 + 알림 패널 */}
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
             <div className="xl:col-span-2">
               <ActivityTable activities={filtered} onSelect={setSelected} />
             </div>
-            <div className="space-y-4">
-              <ConflictPanel conflicts={conflicts} onPick={p => setFilter({ ...filter, product: p })} />
-              <IssueBoard issues={issues} onSelect={setSelected} />
-              <ChangeFeed changes={changes} onSelect={setSelected} />
+            <div>
+              <AlertsPanel
+                conflicts={conflicts}
+                issues={issues}
+                changes={changes}
+                onPick={p => setFilter({ ...filter, product: p })}
+                onSelect={setSelected}
+              />
             </div>
           </div>
         </div>
