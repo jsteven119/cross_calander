@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useCalendarData } from '@/hooks/useCalendarData'
-import { YearlyCalendar } from '@/components/YearlyCalendar'
+import { GTMDashboard } from '@/components/GTMDashboard'
 
 export default function Home() {
   const { data, error, isLoading } = useCalendarData()
@@ -13,7 +13,7 @@ export default function Home() {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center space-y-3">
           <div className="animate-spin rounded-full h-10 w-10 border-2 border-brand-500 border-t-transparent mx-auto" />
-          <p className="text-sm text-gray-500">플래너 불러오는 중...</p>
+          <p className="text-sm text-gray-500">GTM 캘린더 불러오는 중...</p>
         </div>
       </div>
     )
@@ -31,8 +31,8 @@ export default function Home() {
   }
 
   return (
-    <main className="min-h-screen bg-white">
-      <YearlyCalendar data={data} lastRefreshed={lastRefreshed} />
+    <main className="min-h-screen bg-gray-50">
+      <GTMDashboard data={data} lastRefreshed={lastRefreshed} />
     </main>
   )
 }

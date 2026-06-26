@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: '제품 캘린더 | 실시간 연간 플래너',
-  description: '팀 실시간 공유 제품/마케팅 연간 플래너',
+  title: 'GTM 캘린더 | 전 권역 통합 뷰',
+  description: '여러 팀·권역의 GTM 활동을 실시간으로 공유하는 통합 캘린더',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
