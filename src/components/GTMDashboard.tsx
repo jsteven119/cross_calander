@@ -6,6 +6,7 @@ import { detectConflicts, collectIssues, recentChanges } from '@/lib/conflicts'
 import { SwimlaneTimeline } from './SwimlaneTimeline'
 import { Filters, FilterState, emptyFilter } from './Filters'
 import { KpiStrip, ConflictPanel, IssueBoard, ChangeFeed, DetailDrawer, ActivityTable, ECPromotionBoard } from './Panels'
+import { SeedingBoard } from './SeedingBoard'
 
 export function GTMDashboard({ data, lastRefreshed }: { data: GTMData; lastRefreshed: Date }) {
   const [filter, setFilter] = useState<FilterState>(emptyFilter())
@@ -77,6 +78,9 @@ export function GTMDashboard({ data, lastRefreshed }: { data: GTMData; lastRefre
             highlightProduct={filter.product}
             onSelect={setSelected}
           />
+
+          {/* 인플루언서 시딩 스케줄 */}
+          <SeedingBoard />
 
           {/* 활동 목록 + 사이드 패널 */}
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
