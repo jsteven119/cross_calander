@@ -1,9 +1,11 @@
 'use client'
 
 import type { GTMData, ActivityType, ActivityStatus } from '@/lib/types'
+import { BRANDS } from '@/lib/types'
 
 export interface FilterState {
   regions: Set<string>
+  brands: Set<string>
   types: Set<string>
   statuses: Set<string>
   heroOnly: boolean
@@ -51,6 +53,14 @@ export function Filters({ data, filter, setFilter }: Props) {
         ))}
       </div>
       <div className="flex flex-wrap items-center gap-1.5">
+        <span className="text-2xs text-gray-400 w-12">브랜드</span>
+        {BRANDS.map(b => (
+          <Chip key={b} active={filter.brands.has(b)} onClick={() => setFilter({ ...filter, brands: toggle(filter.brands, b) })}>
+            {b}
+          </Chip>
+        ))}
+      </div>
+      <div className="flex flex-wrap items-center gap-1.5">
         <span className="text-2xs text-gray-400 w-12">유형</span>
         {TYPES.map(t => (
           <Chip key={t} active={filter.types.has(t)} onClick={() => setFilter({ ...filter, types: toggle(filter.types, t) })}>
@@ -93,5 +103,5 @@ export function Filters({ data, filter, setFilter }: Props) {
 }
 
 export function emptyFilter(): FilterState {
-  return { regions: new Set(), types: new Set(), statuses: new Set(), heroOnly: false, product: null }
+  return { regions: new Set(), brands: new Set(), types: new Set(), statuses: new Set(), heroOnly: false, product: null }
 }

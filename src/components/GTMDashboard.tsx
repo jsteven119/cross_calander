@@ -5,7 +5,7 @@ import type { GTMData, GTMActivity } from '@/lib/types'
 import { detectConflicts, collectIssues, recentChanges } from '@/lib/conflicts'
 import { SwimlaneTimeline } from './SwimlaneTimeline'
 import { Filters, FilterState, emptyFilter } from './Filters'
-import { KpiStrip, ConflictPanel, IssueBoard, ChangeFeed, DetailDrawer, ActivityTable } from './Panels'
+import { KpiStrip, ConflictPanel, IssueBoard, ChangeFeed, DetailDrawer, ActivityTable, ECPromotionBoard } from './Panels'
 
 export function GTMDashboard({ data, lastRefreshed }: { data: GTMData; lastRefreshed: Date }) {
   const [filter, setFilter] = useState<FilterState>(emptyFilter())
@@ -15,6 +15,7 @@ export function GTMDashboard({ data, lastRefreshed }: { data: GTMData; lastRefre
   const filtered = useMemo(() => {
     return data.activities.filter(a => {
       if (filter.regions.size && !filter.regions.has(a.region)) return false
+      if (filter.brands.size && !filter.brands.has(a.brand)) return false
       if (filter.types.size && !filter.types.has(a.type)) return false
       if (filter.statuses.size && !filter.statuses.has(a.status)) return false
       if (filter.heroOnly && !a.hero) return false
@@ -79,6 +80,9 @@ export function GTMDashboard({ data, lastRefreshed }: { data: GTMData; lastRefre
           <ChangeFeed changes={changes} onSelect={setSelected} />
         </div>
       </div>
+
+      {/* 권역 × EC 프로모션 정리 (전체 너비) */}
+      <ECPromotionBoard regions={data.regions} activities={filtered} onSelect={setSelected} />
 
       <DetailDrawer activity={selected} onClose={() => setSelected(null)} />
     </div>

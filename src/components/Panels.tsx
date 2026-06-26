@@ -1,6 +1,6 @@
 'use client'
 
-import type { GTMActivity, Conflict, GTMData } from '@/lib/types'
+import type { GTMActivity, Conflict, GTMData, Region } from '@/lib/types'
 import { STATUS_STYLE, RISK_STYLE, TYPE_STYLE, fmtDate, fmtRelTime } from '@/lib/ui'
 
 // ─── KPI 요약 스트립 ──────────────────────────────
@@ -117,6 +117,73 @@ export function ChangeFeed({ changes, onSelect }: { changes: GTMActivity[]; onSe
   )
 }
 
+// ─── 권역별 EC 프로모션 보드 (권역 × EC채널 정리) ──────────────
+export function ECPromotionBoard({ regions, activities, onSelect }: { regions: Region[]; activities: GTMActivity[]; onSelect: (a: GTMActivity) => void }) {
+  // 프로모션성 활동만 (프로모션/채널행사/캠페인/신제품출시)
+  const PROMO_TYPES = new Set(['프로모션', '채널행사', '캠페인', '신제품출시'])
+  const promo = activities.filter(a => PROMO_TYPES.has(a.type))
+
+  return (
+    <div className="bg-white border border-gray-200 rounded-lg">
+      <div className="px-4 py-2.5 border-b border-gray-100 flex items-center gap-2">
+        <span className="text-purple-500">🛒</span>
+        <h3 className="text-sm font-bold text-gray-800">권역별 EC 프로모션</h3>
+        <span className="ml-auto text-xs bg-purple-100 text-purple-700 rounded-full px-2 py-0.5">{promo.length}건</span>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 divide-y xl:divide-y-0 xl:divide-x divide-gray-100">
+        {regions.map(region => {
+          const regionActs = promo.filter(a => a.region === region.name)
+          // EC 채널별 그룹화
+          const byChannel = new Map<string, GTMActivity[]>()
+          regionActs.forEach(a => {
+            const ch = a.channel || '기타'
+            if (!byChannel.has(ch)) byChannel.set(ch, [])
+            byChannel.get(ch)!.push(a)
+          })
+          const channels = Array.from(byChannel.entries())
+          return (
+            <div key={region.name} className="p-3 min-h-[120px]">
+              <div className="flex items-center gap-1.5 mb-2">
+                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: region.color }} />
+                <span className="text-xs font-bold text-gray-700">{region.name}</span>
+                <span className="text-2xs text-gray-400">{regionActs.length}</span>
+              </div>
+              {channels.length === 0 && <p className="text-2xs text-gray-300">예정 없음</p>}
+              <div className="space-y-2">
+                {channels.map(([ch, acts]) => (
+                  <div key={ch}>
+                    <p className="text-2xs font-semibold text-gray-500 mb-0.5">{ch}</p>
+                    <div className="space-y-1">
+                      {acts.sort((a, b) => (a.startDate < b.startDate ? -1 : 1)).map(a => (
+                        <button
+                          key={a.id}
+                          onClick={() => onSelect(a)}
+                          className="w-full text-left rounded-md border border-gray-100 hover:border-purple-300 hover:bg-purple-50 px-2 py-1.5 transition-colors"
+                        >
+                          <div className="flex items-center gap-1">
+                            <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${TYPE_STYLE[a.type] ?? 'bg-gray-400'}`} />
+                            {a.hero && <span className="text-pink-500 text-2xs shrink-0">★</span>}
+                            <span className="text-2xs font-medium text-gray-700 truncate">{a.title}</span>
+                            {a.issue && <span className="text-red-400 text-2xs shrink-0">⚠</span>}
+                          </div>
+                          <div className="flex items-center justify-between mt-0.5 pl-2.5">
+                            <span className="text-2xs text-gray-400">{a.brand}</span>
+                            <span className="text-2xs text-gray-400">{fmtDate(a.startDate)}~{fmtDate(a.endDate)}</span>
+                          </div>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
 // ─── 전체 활동 목록 (타임라인 하단 리스트 뷰) ──────────────
 export function ActivityTable({ activities, onSelect }: { activities: GTMActivity[]; onSelect: (a: GTMActivity) => void }) {
   const sorted = [...activities].sort((a, b) => (a.startDate < b.startDate ? -1 : a.startDate > b.startDate ? 1 : 0))
@@ -132,6 +199,7 @@ export function ActivityTable({ activities, onSelect }: { activities: GTMActivit
           <thead>
             <tr className="bg-gray-50 text-gray-400 text-left">
               <th className="font-medium px-3 py-2">권역</th>
+              <th className="font-medium px-3 py-2">브랜드</th>
               <th className="font-medium px-3 py-2">상품</th>
               <th className="font-medium px-3 py-2">활동명</th>
               <th className="font-medium px-3 py-2">유형</th>
@@ -142,7 +210,7 @@ export function ActivityTable({ activities, onSelect }: { activities: GTMActivit
           </thead>
           <tbody className="divide-y divide-gray-50">
             {sorted.length === 0 && (
-              <tr><td colSpan={7} className="px-3 py-8 text-center text-gray-400">표시할 활동이 없습니다</td></tr>
+              <tr><td colSpan={8} className="px-3 py-8 text-center text-gray-400">표시할 활동이 없습니다</td></tr>
             )}
             {sorted.map(a => {
               const st = STATUS_STYLE[a.status]
@@ -150,6 +218,7 @@ export function ActivityTable({ activities, onSelect }: { activities: GTMActivit
               return (
                 <tr key={a.id} onClick={() => onSelect(a)} className="hover:bg-gray-50 cursor-pointer">
                   <td className="px-3 py-2 text-gray-500 whitespace-nowrap">{a.region}</td>
+                  <td className="px-3 py-2 text-gray-500 whitespace-nowrap">{a.brand}</td>
                   <td className="px-3 py-2 font-medium text-gray-700 whitespace-nowrap">
                     {a.hero && <span className="text-pink-500 mr-0.5">★</span>}{a.product}
                   </td>
@@ -183,6 +252,7 @@ export function DetailDrawer({ activity, onClose }: { activity: GTMActivity | nu
   const st = STATUS_STYLE[activity.status]
   const rows: [string, string][] = [
     ['권역', activity.region],
+    ['브랜드', activity.brand],
     ['세부 시장', activity.market],
     ['상품', activity.product + (activity.hero ? ' ★주력' : '')],
     ['유형', activity.type],

@@ -18,9 +18,9 @@ const SHEET_NAME = 'plans'
 
 // 열 위치 (1부터). plans 탭 헤더 순서와 일치해야 함.
 const COL = {
-  id: 1, region: 2, market: 3, team: 4, owner: 5, type: 6, product: 7,
-  hero: 8, title: 9, start: 10, end: 11, status: 12, budget: 13,
-  channel: 14, issue: 15, risk: 16, updatedAt: 17, updatedBy: 18,
+  id: 1, region: 2, brand: 3, market: 4, team: 5, owner: 6, type: 7, product: 8,
+  hero: 9, title: 10, start: 11, end: 12, status: 13, budget: 14,
+  channel: 15, issue: 16, risk: 17, updatedAt: 18, updatedBy: 19,
 }
 
 function onEditInstalled(e) {
@@ -70,4 +70,31 @@ function notifyApp() {
 function testNotify() {
   notifyApp()
   console.log('테스트 완료')
+}
+
+/**
+ * 드롭다운(데이터 확인) 일괄 설정 — 에디터에서 한 번만 실행.
+ * region/brand/type/hero/status/risk 열에 목록 제한을 걸어 오타 방지.
+ */
+function setupValidations() {
+  const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(SHEET_NAME)
+  if (!sheet) { console.log(SHEET_NAME + ' 탭을 찾을 수 없습니다'); return }
+
+  const lists = {
+    [COL.region]: ['국내', '미주', '중화권', '일본'],
+    [COL.brand]:  ['웨이크메이크', '컬러그램', '바이오힐보'],
+    [COL.type]:   ['신제품출시', '프로모션', '캠페인', '채널행사', '리뉴얼', '단종'],
+    [COL.hero]:   ['Y', 'N'],
+    [COL.status]: ['기획', '확정', '진행중', '완료', '보류', '취소'],
+    [COL.risk]:   ['상', '중', '하'],
+  }
+  const rows = 1000  // 2행부터 1001행까지 적용
+  Object.keys(lists).forEach(col => {
+    const rule = SpreadsheetApp.newDataValidation()
+      .requireValueInList(lists[col], true)
+      .setAllowInvalid(false)
+      .build()
+    sheet.getRange(2, Number(col), rows, 1).setDataValidation(rule)
+  })
+  console.log('드롭다운 설정 완료')
 }

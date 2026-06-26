@@ -13,28 +13,30 @@
 |---|---|---|---|
 | A | id | **자동** (Apps Script) | P-0001 |
 | B | region | 권역 (드롭다운) | 국내 / 미주 / 중화권 / 일본 |
-| C | market | 세부 시장·채널 | 미국-아마존 |
-| D | team | 입력 팀 | 미주팀 |
-| E | owner | 담당자 | Sarah K |
-| F | type | 활동유형 (드롭다운) | 신제품출시 / 프로모션 / 캠페인 / 채널행사 / 리뉴얼 / 단종 |
-| G | product | 상품·라인명 | 헬로키티 컬렉션 |
-| H | hero | 주력여부 | Y / N |
-| I | title | 활동명 | Hello Kitty US Launch |
-| J | start_date | 시작일 | 2026-04-20 |
-| K | end_date | 종료일 | 2026-06-15 |
-| L | status | 상태 (드롭다운) | 기획 / 확정 / 진행중 / 완료 / 보류 / 취소 |
-| M | budget | 예산 (자유 텍스트) | $120K |
-| N | channel | 채널 | Amazon |
-| O | issue | 이슈·리스크 내용 | 통관 지연 가능성 |
-| P | risk_level | 이슈 심각도 | 상 / 중 / 하 |
-| Q | updated_at | **자동** | (Apps Script) |
-| R | updated_by | **자동** | (Apps Script) |
+| C | brand | 브랜드 (드롭다운) | 웨이크메이크 / 컬러그램 / 바이오힐보 |
+| D | market | 세부 시장·채널 | 미국-아마존 |
+| E | team | 입력 팀 | 미주팀 |
+| F | owner | 담당자 | Sarah K |
+| G | type | 활동유형 (드롭다운) | 신제품출시 / 프로모션 / 캠페인 / 채널행사 / 리뉴얼 / 단종 |
+| H | product | 상품·라인명 | 헬로키티 컬렉션 |
+| I | hero | 주력여부 | Y / N |
+| J | title | 활동명 | Hello Kitty US Launch |
+| K | start_date | 시작일 | 2026-04-20 |
+| L | end_date | 종료일 | 2026-06-15 |
+| M | status | 상태 (드롭다운) | 기획 / 확정 / 진행중 / 완료 / 보류 / 취소 |
+| N | budget | 예산 (자유 텍스트) | $120K |
+| O | channel | 채널 (EC/플랫폼) | Amazon |
+| P | issue | 이슈·리스크 내용 | 통관 지연 가능성 |
+| Q | risk_level | 이슈 심각도 | 상 / 중 / 하 |
+| R | updated_at | **자동** | (Apps Script) |
+| S | updated_by | **자동** | (Apps Script) |
 
 > `gtm_plans_template.csv`를 Google Sheets에 **가져오기**하면 헤더+예시가 채워집니다.
 
 ### 여러 팀 동시 입력을 위한 권장 설정
 
-- **드롭다운(데이터 확인)**: B(region)·F(type)·L(status)·P(risk)은 목록으로 제한 → 오타로 값 갈라짐 방지
+- **드롭다운(데이터 확인)**: B(region)·C(brand)·G(type)·I(hero)·M(status)·Q(risk)은 목록으로 제한 → 오타로 값 갈라짐 방지
+  - Apps Script의 `setupValidations()`를 한 번 실행하면 드롭다운이 자동 설정됩니다
 - **id·updated_at·updated_by 자동**: Apps Script가 채움 (직접 입력 X)
 - **병합 셀 금지**: 동시 편집 시 깨짐
 - **팀별 필터뷰**: 각 팀이 자기 권역만 걸러봐도 원본 안 건드림 (데이터 → 필터 보기)

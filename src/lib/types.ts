@@ -19,9 +19,13 @@ export type ActivityStatus =
 
 export type RiskLevel = '상' | '중' | '하' | ''
 
+// 브랜드 (자사 멀티브랜드)
+export const BRANDS = ['웨이크메이크', '컬러그램', '바이오힐보'] as const
+
 export interface GTMActivity {
   id: string
-  region: string        // 권역 (국내/미주/중화권/일본/동남아/EU)
+  region: string        // 권역 (국내/미주/중화권/일본)
+  brand: string         // 브랜드 (웨이크메이크/컬러그램/바이오힐보)
   market: string        // 세부 국가·채널 (미국-아마존 등)
   team: string          // 입력 팀
   owner: string         // 담당자
