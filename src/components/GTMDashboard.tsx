@@ -29,7 +29,7 @@ export function GTMDashboard({ data, lastRefreshed }: { data: GTMData; lastRefre
   const changes = useMemo(() => recentChanges(data.activities), [data.activities])
 
   return (
-    <div className="max-w-[1600px] mx-auto px-4 py-4 space-y-4">
+    <div className="max-w-[1800px] mx-auto px-4 py-4 space-y-4">
       {/* 헤더 */}
       <div className="flex items-center justify-between">
         <div>
@@ -52,37 +52,45 @@ export function GTMDashboard({ data, lastRefreshed }: { data: GTMData; lastRefre
 
       <KpiStrip data={data} conflicts={conflicts} issues={issues} />
 
-      <Filters data={data} filter={filter} setFilter={setFilter} />
+      {/* 메인 레이아웃: 좌측 필터 사이드바 + 우측 콘텐츠 */}
+      <div className="flex gap-4 items-start">
+        {/* 좌측 필터 사이드바 */}
+        <aside className="w-52 shrink-0 sticky top-4">
+          <Filters data={data} filter={filter} setFilter={setFilter} />
+          {filter.product && (
+            <div className="mt-2 flex items-center gap-1.5 bg-pink-50 border border-pink-200 rounded-lg px-3 py-2 text-xs">
+              <span className="text-pink-700 font-medium truncate">렌즈: {filter.product}</span>
+              <button onClick={() => setFilter({ ...filter, product: null })} className="text-pink-400 hover:text-pink-600 shrink-0 ml-auto">✕</button>
+            </div>
+          )}
+        </aside>
 
-      {filter.product && (
-        <div className="flex items-center gap-2 text-xs">
-          <span className="bg-pink-100 text-pink-700 rounded-full px-2.5 py-1">
-            상품 렌즈: <b>{filter.product}</b>
-          </span>
-          <button onClick={() => setFilter({ ...filter, product: null })} className="text-gray-400 hover:text-gray-600">해제 ✕</button>
-        </div>
-      )}
+        {/* 우측 콘텐츠 영역 */}
+        <div className="flex-1 min-w-0 space-y-4">
+          {/* EC 프로모션 보드 — 필터 하단 바로 아래 */}
+          <ECPromotionBoard regions={data.regions} activities={filtered} onSelect={setSelected} />
 
-      {/* 메인: 타임라인 + 사이드 패널 */}
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
-        <div className="xl:col-span-2 space-y-4">
+          {/* 메인 타임라인 (전체 너비) */}
           <SwimlaneTimeline
             data={data}
             activities={filtered}
             highlightProduct={filter.product}
             onSelect={setSelected}
           />
-          <ActivityTable activities={filtered} onSelect={setSelected} />
-        </div>
-        <div className="space-y-4">
-          <ConflictPanel conflicts={conflicts} onPick={p => setFilter({ ...filter, product: p })} />
-          <IssueBoard issues={issues} onSelect={setSelected} />
-          <ChangeFeed changes={changes} onSelect={setSelected} />
+
+          {/* 활동 목록 + 사이드 패널 */}
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
+            <div className="xl:col-span-2">
+              <ActivityTable activities={filtered} onSelect={setSelected} />
+            </div>
+            <div className="space-y-4">
+              <ConflictPanel conflicts={conflicts} onPick={p => setFilter({ ...filter, product: p })} />
+              <IssueBoard issues={issues} onSelect={setSelected} />
+              <ChangeFeed changes={changes} onSelect={setSelected} />
+            </div>
+          </div>
         </div>
       </div>
-
-      {/* 권역 × EC 프로모션 정리 (전체 너비) */}
-      <ECPromotionBoard regions={data.regions} activities={filtered} onSelect={setSelected} />
 
       <DetailDrawer activity={selected} onClose={() => setSelected(null)} />
     </div>

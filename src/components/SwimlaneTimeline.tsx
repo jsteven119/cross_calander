@@ -42,8 +42,8 @@ export function SwimlaneTimeline({ data, activities, highlightProduct, onSelect 
     })
   }, [data.regions, activities, year])
 
-  const TRACK_H = 40   // 트랙(행) 높이
-  const BAR_H = 34     // 막대 높이
+  const TRACK_H = 52   // 트랙(행) 높이
+  const BAR_H = 44     // 막대 높이
 
   return (
     <div className="border border-gray-200 rounded-lg overflow-hidden bg-white">

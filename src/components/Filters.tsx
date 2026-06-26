@@ -39,44 +39,66 @@ function toggle(set: Set<string>, v: string): Set<string> {
   return n
 }
 
+function Section({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-1.5">
+      <p className="text-2xs font-semibold text-gray-400 uppercase tracking-wide">{label}</p>
+      <div className="flex flex-wrap gap-1">{children}</div>
+    </div>
+  )
+}
+
 export function Filters({ data, filter, setFilter }: Props) {
   const products = Array.from(new Set(data.activities.map(a => a.product).filter(Boolean))).sort()
+  const hasFilter = filter.regions.size || filter.brands.size || filter.types.size || filter.statuses.size || filter.heroOnly || filter.product
 
   return (
-    <div className="bg-white border border-gray-200 rounded-lg px-4 py-3 space-y-2.5">
-      <div className="flex flex-wrap items-center gap-1.5">
-        <span className="text-2xs text-gray-400 w-12">권역</span>
+    <div className="bg-white border border-gray-200 rounded-lg px-3 py-3 space-y-3">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-bold text-gray-700">필터</span>
+        {hasFilter ? (
+          <button
+            onClick={() => setFilter(emptyFilter())}
+            className="text-2xs text-gray-400 hover:text-gray-600"
+          >
+            초기화
+          </button>
+        ) : null}
+      </div>
+
+      <Section label="권역">
         {data.regions.map(r => (
           <Chip key={r.name} active={filter.regions.has(r.name)} onClick={() => setFilter({ ...filter, regions: toggle(filter.regions, r.name) })}>
             {r.name}
           </Chip>
         ))}
-      </div>
-      <div className="flex flex-wrap items-center gap-1.5">
-        <span className="text-2xs text-gray-400 w-12">브랜드</span>
+      </Section>
+
+      <Section label="브랜드">
         {BRANDS.map(b => (
           <Chip key={b} active={filter.brands.has(b)} onClick={() => setFilter({ ...filter, brands: toggle(filter.brands, b) })}>
             {b}
           </Chip>
         ))}
-      </div>
-      <div className="flex flex-wrap items-center gap-1.5">
-        <span className="text-2xs text-gray-400 w-12">유형</span>
+      </Section>
+
+      <Section label="유형">
         {TYPES.map(t => (
           <Chip key={t} active={filter.types.has(t)} onClick={() => setFilter({ ...filter, types: toggle(filter.types, t) })}>
             {t}
           </Chip>
         ))}
-      </div>
-      <div className="flex flex-wrap items-center gap-1.5">
-        <span className="text-2xs text-gray-400 w-12">상태</span>
+      </Section>
+
+      <Section label="상태">
         {STATUSES.map(s => (
           <Chip key={s} active={filter.statuses.has(s)} onClick={() => setFilter({ ...filter, statuses: toggle(filter.statuses, s) })}>
             {s}
           </Chip>
         ))}
-      </div>
-      <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-gray-50">
+      </Section>
+
+      <div className="pt-2 border-t border-gray-100 space-y-2">
         <label className="flex items-center gap-1.5 text-2xs text-gray-600 cursor-pointer">
           <input
             type="checkbox"
@@ -86,12 +108,12 @@ export function Filters({ data, filter, setFilter }: Props) {
           />
           ★ 주력상품만
         </label>
-        <div className="flex items-center gap-1.5 ml-auto">
-          <span className="text-2xs text-gray-400">상품 렌즈</span>
+        <div className="space-y-1">
+          <p className="text-2xs font-semibold text-gray-400 uppercase tracking-wide">상품 렌즈</p>
           <select
             value={filter.product ?? ''}
             onChange={e => setFilter({ ...filter, product: e.target.value || null })}
-            className="text-2xs border border-gray-200 rounded px-2 py-1 max-w-[160px]"
+            className="w-full text-2xs border border-gray-200 rounded px-2 py-1.5"
           >
             <option value="">전체 보기</option>
             {products.map(p => <option key={p} value={p}>{p}</option>)}
