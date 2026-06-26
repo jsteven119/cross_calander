@@ -13,8 +13,6 @@ const DEFAULT_REGIONS: Region[] = [
   { name: '미주',   color: '#3b82f6', order: 1 },
   { name: '중화권', color: '#ef4444', order: 2 },
   { name: '일본',   color: '#8b5cf6', order: 3 },
-  { name: '동남아', color: '#10b981', order: 4 },
-  { name: 'EU',     color: '#f59e0b', order: 5 },
 ]
 
 function getAuth() {
@@ -138,13 +136,13 @@ export function getSampleData(): GTMData {
     { id: 'P-0003', region: '중화권', market: '중국-티몰', team: '중화권팀', owner: '王伟', type: '프로모션', product: '래스팅 글로우 스틱', hero: true, title: '618 티몰 메가세일', startDate: '2026-06-01', endDate: '2026-06-20', status: '확정', budget: '2억', channel: 'Tmall', issue: 'KOL 섭외 지연', riskLevel: '중', updatedBy: '王伟' },
     { id: 'P-0004', region: '국내', market: '홈쇼핑', team: '국내마케팅', owner: '박서준', type: '프로모션', product: '래스팅 글로우 스틱', hero: true, title: '홈쇼핑 단독 기획전', startDate: '2026-06-08', endDate: '2026-06-25', status: '기획', budget: '0.8억', channel: '홈쇼핑', issue: '', riskLevel: '', updatedBy: '박서준' },
     { id: 'P-0005', region: '일본', market: '일본-큐텐', team: '일본팀', owner: '佐藤', type: '캠페인', product: '누드 스탠다드', hero: false, title: 'RE:NUDE 큐텐 메가와리', startDate: '2026-05-01', endDate: '2026-05-31', status: '진행중', budget: '¥8M', channel: 'Qoo10', issue: '', riskLevel: '', updatedBy: '佐藤' },
-    { id: 'P-0006', region: '동남아', market: '태국-쇼피', team: '동남아팀', owner: 'Nicha', type: '채널행사', product: '누드 스탠다드', hero: false, title: 'Shopee 5.5 캠페인', startDate: '2026-05-05', endDate: '2026-05-10', status: '완료', budget: '$30K', channel: 'Shopee', issue: '', riskLevel: '', updatedBy: 'Nicha' },
-    { id: 'P-0007', region: '미주', market: '미국-세포라', team: '미주팀', owner: 'Sarah K', type: '캠페인', product: '볼드 블러 틴트', hero: true, title: 'Bold Blur Tint Sephora 입점', startDate: '2026-07-01', endDate: '2026-08-31', status: '기획', budget: '$200K', channel: 'Sephora', issue: 'FDA 성분 검토 진행중', riskLevel: '상', updatedBy: 'Sarah K' },
-    { id: 'P-0008', region: '중화권', market: '중국-더우인', team: '중화권팀', owner: '李娜', type: '캠페인', product: '볼드 블러 틴트', hero: true, title: '더우인 라이브 커머스', startDate: '2026-07-15', endDate: '2026-08-15', status: '기획', budget: '1.2억', channel: 'Douyin', issue: '', riskLevel: '', updatedBy: '李娜' },
-    { id: 'P-0009', region: 'EU', market: '영국-아마존', team: 'EU팀', owner: 'James', type: '신제품출시', product: '글로우 쿠션', hero: false, title: 'Glow Cushion UK Launch', startDate: '2026-09-01', endDate: '2026-10-15', status: '기획', budget: '£80K', channel: 'Amazon UK', issue: 'EU 인증(CPNP) 미완료', riskLevel: '상', updatedBy: 'James' },
-    { id: 'P-0010', region: '국내', market: '네이버', team: '국내마케팅', owner: '김지은', type: '프로모션', product: '글로우 쿠션', hero: false, title: '네이버 브랜드데이', startDate: '2026-09-10', endDate: '2026-09-12', status: '기획', budget: '0.4억', channel: '네이버', issue: '', riskLevel: '', updatedBy: '김지은' },
-    { id: 'P-0011', region: '일본', market: '일본-앳코스메', team: '일본팀', owner: '佐藤', type: '프로모션', product: '래스팅 글로우 스틱', hero: true, title: '앳코스메 신상 푸시', startDate: '2026-06-10', endDate: '2026-06-30', status: '기획', budget: '¥5M', channel: '@cosme', issue: '재고 배분 협의 필요', riskLevel: '중', updatedBy: '佐藤' },
-    { id: 'P-0012', region: '동남아', market: '베트남-라자다', team: '동남아팀', owner: 'Linh', type: '채널행사', product: '헬로키티 컬렉션', hero: true, title: 'Lazada 6.6 헬로키티', startDate: '2026-06-06', endDate: '2026-06-09', status: '확정', budget: '$25K', channel: 'Lazada', issue: '', riskLevel: '', updatedBy: 'Linh' },
+    { id: 'P-0006', region: '미주', market: '미국-세포라', team: '미주팀', owner: 'Sarah K', type: '캠페인', product: '볼드 블러 틴트', hero: true, title: 'Bold Blur Tint Sephora 입점', startDate: '2026-07-01', endDate: '2026-08-31', status: '기획', budget: '$200K', channel: 'Sephora', issue: 'FDA 성분 검토 진행중', riskLevel: '상', updatedBy: 'Sarah K' },
+    { id: 'P-0007', region: '중화권', market: '중국-더우인', team: '중화권팀', owner: '李娜', type: '캠페인', product: '볼드 블러 틴트', hero: true, title: '더우인 라이브 커머스', startDate: '2026-07-15', endDate: '2026-08-15', status: '기획', budget: '1.2억', channel: 'Douyin', issue: '', riskLevel: '', updatedBy: '李娜' },
+    { id: 'P-0008', region: '국내', market: '네이버', team: '국내마케팅', owner: '김지은', type: '프로모션', product: '글로우 쿠션', hero: false, title: '네이버 브랜드데이', startDate: '2026-09-10', endDate: '2026-09-12', status: '기획', budget: '0.4억', channel: '네이버', issue: '', riskLevel: '', updatedBy: '김지은' },
+    { id: 'P-0009', region: '일본', market: '일본-앳코스메', team: '일본팀', owner: '佐藤', type: '프로모션', product: '래스팅 글로우 스틱', hero: true, title: '앳코스메 신상 푸시', startDate: '2026-06-10', endDate: '2026-06-30', status: '기획', budget: '¥5M', channel: '@cosme', issue: '재고 배분 협의 필요', riskLevel: '중', updatedBy: '佐藤' },
+    { id: 'P-0010', region: '중화권', market: '중국-위챗', team: '중화권팀', owner: '陈明', type: '신제품출시', product: '글로우 쿠션', hero: true, title: '글로우 쿠션 위챗 런칭', startDate: '2026-09-01', endDate: '2026-10-15', status: '기획', budget: '1억', channel: 'WeChat', issue: '현지 성분 인증 진행중', riskLevel: '상', updatedBy: '陈明' },
+    { id: 'P-0011', region: '국내', market: '올리브영', team: '국내마케팅', owner: '이수민', type: '캠페인', product: '볼드 블러 틴트', hero: true, title: '볼드 블러 틴트 올리브영 출시', startDate: '2026-07-05', endDate: '2026-08-20', status: '기획', budget: '1억', channel: '올리브영', issue: '', riskLevel: '', updatedBy: '이수민' },
+    { id: 'P-0012', region: '일본', market: '일본-라쿠텐', team: '일본팀', owner: '田中', type: '채널행사', product: '헬로키티 컬렉션', hero: true, title: '라쿠텐 슈퍼세일 헬로키티', startDate: '2026-06-04', endDate: '2026-06-11', status: '확정', budget: '¥6M', channel: 'Rakuten', issue: '', riskLevel: '', updatedBy: '田中' },
   ]
 
   const now = new Date()
