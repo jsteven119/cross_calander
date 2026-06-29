@@ -30,25 +30,52 @@ export function GTMDashboard({ data, lastRefreshed }: { data: GTMData; lastRefre
   const issues = useMemo(() => collectIssues(data.activities), [data.activities])
   const changes = useMemo(() => recentChanges(data.activities), [data.activities])
 
+  // 데이터 최신 입력시각 (시트의 가장 최근 수정 기록). ISO면 보기 좋게 변환.
+  const dataFresh = (() => {
+    const s = data.lastUpdated || ''
+    if (s.includes('T')) {
+      const d = new Date(s)
+      return isNaN(d.getTime()) ? s : d.toLocaleString('ko-KR', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+    }
+    return s
+  })()
+  const isSample = data.title.includes('샘플')
+
   return (
     <div className="max-w-[1800px] mx-auto px-4 py-4 space-y-4">
       {/* 헤더 */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div>
           <h1 className="text-2xl font-bold text-gray-800">{data.title}</h1>
-          <p className="text-xs text-gray-400 mt-0.5">{data.year}년 · 전 권역 통합 뷰</p>
+          <p className="text-xs text-gray-400 mt-0.5">
+            {data.year}년 · 전 브랜드·전 권역 마케팅 활동 통합 캘린더 · 구글시트 실시간 연동
+          </p>
         </div>
-        <div className="flex items-center gap-3">
-          <span className="text-xs text-gray-400">
-            {lastRefreshed.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
-          </span>
-          <div className="flex items-center gap-1.5 bg-green-50 border border-green-200 rounded-full px-2.5 py-1">
-            <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
-            </span>
-            <span className="text-xs text-green-700 font-medium">실시간</span>
+        <div className="flex items-center gap-2">
+          {/* 데이터 신선도: 어디까지 입력됐는지 */}
+          <div className="flex items-center gap-1.5 bg-gray-50 border border-gray-200 rounded-full px-3 py-1">
+            <span className="text-xs text-gray-400">📊</span>
+            <span className="text-xs text-gray-600 font-medium">활동 {data.activities.length}건</span>
+            {dataFresh && (
+              <span className="text-xs text-gray-400">· 최근 입력 {dataFresh}</span>
+            )}
           </div>
+          {isSample ? (
+            <div className="flex items-center gap-1.5 bg-amber-50 border border-amber-200 rounded-full px-2.5 py-1">
+              <span className="text-xs text-amber-700 font-medium">⚠ 샘플 데이터</span>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1.5 bg-green-50 border border-green-200 rounded-full px-2.5 py-1">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500" />
+              </span>
+              <span className="text-xs text-green-700 font-medium">실시간 연동</span>
+            </div>
+          )}
+          <span className="text-xs text-gray-300">
+            새로고침 {lastRefreshed.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' })}
+          </span>
         </div>
       </div>
 
@@ -67,15 +94,9 @@ export function GTMDashboard({ data, lastRefreshed }: { data: GTMData; lastRefre
           )}
         </aside>
 
-        {/* 우측 콘텐츠 영역 */}
+        {/* 우측 콘텐츠 영역 — 처음 보는 사람 기준 순서: 전체 일정 → 신상품 → EC행사 → 시딩 → 상세 */}
         <div className="flex-1 min-w-0 space-y-4">
-          {/* EC 프로모션 보드 — 필터 하단 바로 아래 */}
-          <ECPromotionBoard regions={data.regions} activities={filtered} onSelect={setSelected} />
-
-          {/* 월별 신상품 출시 목록 */}
-          <LaunchCalendar activities={filtered} onSelect={setSelected} />
-
-          {/* 메인 타임라인 (전체 너비) */}
+          {/* 1) 메인 타임라인 = 전체 일정 한 눈에 (핵심 뷰) */}
           <SwimlaneTimeline
             data={data}
             activities={filtered}
@@ -83,7 +104,13 @@ export function GTMDashboard({ data, lastRefreshed }: { data: GTMData; lastRefre
             onSelect={setSelected}
           />
 
-          {/* 인플루언서 시딩 스케줄 */}
+          {/* 2) 월별 신상품 출시 */}
+          <LaunchCalendar activities={filtered} onSelect={setSelected} />
+
+          {/* 3) EC 채널 프로모션 보드 */}
+          <ECPromotionBoard regions={data.regions} activities={filtered} onSelect={setSelected} />
+
+          {/* 4) 인플루언서 시딩 스케줄 */}
           <SeedingBoard />
 
           {/* 활동 목록 + 알림 패널 */}
