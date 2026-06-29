@@ -7,6 +7,7 @@ import { SwimlaneTimeline } from './SwimlaneTimeline'
 import { Filters, FilterState, emptyFilter } from './Filters'
 import { KpiStrip, AlertsPanel, DetailDrawer, ActivityTable, ECPromotionBoard } from './Panels'
 import { SeedingBoard } from './SeedingBoard'
+import { LaunchCalendar } from './LaunchCalendar'
 
 export function GTMDashboard({ data, lastRefreshed }: { data: GTMData; lastRefreshed: Date }) {
   const [filter, setFilter] = useState<FilterState>(emptyFilter())
@@ -70,6 +71,9 @@ export function GTMDashboard({ data, lastRefreshed }: { data: GTMData; lastRefre
         <div className="flex-1 min-w-0 space-y-4">
           {/* EC 프로모션 보드 — 필터 하단 바로 아래 */}
           <ECPromotionBoard regions={data.regions} activities={filtered} onSelect={setSelected} />
+
+          {/* 월별 신상품 출시 목록 */}
+          <LaunchCalendar activities={filtered} onSelect={setSelected} />
 
           {/* 메인 타임라인 (전체 너비) */}
           <SwimlaneTimeline
