@@ -8,6 +8,7 @@ export interface FilterState {
   brands: Set<string>
   types: Set<string>
   statuses: Set<string>
+  months: Set<number>      // 시작월 (1~12)
   heroOnly: boolean
   product: string | null   // 상품 렌즈 (선택 시 해당 상품만 강조)
 }
@@ -39,6 +40,17 @@ function toggle(set: Set<string>, v: string): Set<string> {
   return n
 }
 
+function toggleNum(set: Set<number>, v: number): Set<number> {
+  const n = new Set(set)
+  n.has(v) ? n.delete(v) : n.add(v)
+  return n
+}
+
+function startMonth(d: string): number | null {
+  const m = (d || '').match(/^\d{4}\D+(\d{1,2})/)
+  return m ? +m[1] : null
+}
+
 function Section({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-1.5">
@@ -50,7 +62,9 @@ function Section({ label, children }: { label: string; children: React.ReactNode
 
 export function Filters({ data, filter, setFilter }: Props) {
   const products = Array.from(new Set(data.activities.map(a => a.product).filter(Boolean))).sort()
-  const hasFilter = filter.regions.size || filter.brands.size || filter.types.size || filter.statuses.size || filter.heroOnly || filter.product
+  // 데이터에 실제로 존재하는 시작월만 칩으로 노출
+  const months = Array.from(new Set(data.activities.map(a => startMonth(a.startDate)).filter((m): m is number => m !== null))).sort((a, b) => a - b)
+  const hasFilter = filter.regions.size || filter.brands.size || filter.types.size || filter.statuses.size || filter.months.size || filter.heroOnly || filter.product
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg px-3 py-3 space-y-3">
@@ -70,6 +84,14 @@ export function Filters({ data, filter, setFilter }: Props) {
         {data.regions.map(r => (
           <Chip key={r.name} active={filter.regions.has(r.name)} onClick={() => setFilter({ ...filter, regions: toggle(filter.regions, r.name) })}>
             {r.name}
+          </Chip>
+        ))}
+      </Section>
+
+      <Section label="월">
+        {months.map(m => (
+          <Chip key={m} active={filter.months.has(m)} onClick={() => setFilter({ ...filter, months: toggleNum(filter.months, m) })}>
+            {m}월
           </Chip>
         ))}
       </Section>
@@ -125,5 +147,5 @@ export function Filters({ data, filter, setFilter }: Props) {
 }
 
 export function emptyFilter(): FilterState {
-  return { regions: new Set(), brands: new Set(), types: new Set(), statuses: new Set(), heroOnly: false, product: null }
+  return { regions: new Set(), brands: new Set(), types: new Set(), statuses: new Set(), months: new Set(), heroOnly: false, product: null }
 }

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import type { GTMActivity, Conflict, GTMData, Region } from '@/lib/types'
-import { STATUS_STYLE, RISK_STYLE, TYPE_STYLE, fmtDate, fmtRelTime } from '@/lib/ui'
+import { STATUS_STYLE, RISK_STYLE, TYPE_STYLE, fmtDate, fmtRelTime, category, CATEGORY_STYLE } from '@/lib/ui'
 
 // ─── KPI 요약 스트립 ──────────────────────────────
 export function KpiStrip({ data, conflicts, issues }: { data: GTMData; conflicts: Conflict[]; issues: GTMActivity[] }) {
@@ -264,77 +264,129 @@ export function ECPromotionBoard({ regions, activities, onSelect }: { regions: R
   )
 }
 
-// ─── 전체 활동 목록 (타임라인 하단 리스트 뷰) ──────────────
+// ─── 전체 활동 목록 (월별 → 브랜드별 그룹) ──────────────
+const AT_BRAND_ORDER = ['바이오힐보', '웨이크메이크', '컬러그램', '브링그린', '올리브영']
+const AT_BRAND_COLOR: Record<string, string> = {
+  바이오힐보: '#7C3AED', 웨이크메이크: '#DC2626', 컬러그램: '#DB2777', 브링그린: '#16A34A', 올리브영: '#65A30D',
+}
+function atMonthKey(d: string): { key: string; y: number; m: number } | null {
+  const mm = (d || '').match(/^(\d{4})\D+(\d{1,2})/)
+  return mm ? { key: `${mm[1]}-${String(+mm[2]).padStart(2, '0')}`, y: +mm[1], m: +mm[2] } : null
+}
+
 export function ActivityTable({ activities, onSelect }: { activities: GTMActivity[]; onSelect: (a: GTMActivity) => void }) {
-  const LIMIT = 30
-  const [expanded, setExpanded] = useState(false)
+  // 시작일 있는 것만 그룹핑, 나머지(날짜 미입력)는 '미정'으로 묶음
   const sorted = [...activities].sort((a, b) => (a.startDate < b.startDate ? -1 : a.startDate > b.startDate ? 1 : 0))
-  const shown = expanded ? sorted : sorted.slice(0, LIMIT)
+
+  // 월 → 브랜드 → 활동 으로 그룹
+  const months: { key: string; y: number; m: number; label: string; total: number; brands: { brand: string; acts: GTMActivity[] }[] }[] = []
+  const monthIndex = new Map<string, number>()
+  const pushTo = (key: string, y: number, m: number, label: string, a: GTMActivity) => {
+    let idx = monthIndex.get(key)
+    if (idx === undefined) { idx = months.length; monthIndex.set(key, idx); months.push({ key, y, m, label, total: 0, brands: [] }) }
+    const grp = months[idx]
+    grp.total++
+    const brand = a.brand || '기타'
+    let b = grp.brands.find(x => x.brand === brand)
+    if (!b) { b = { brand, acts: [] }; grp.brands.push(b) }
+    b.acts.push(a)
+  }
+  sorted.forEach(a => {
+    const mk = atMonthKey(a.startDate)
+    if (mk) pushTo(mk.key, mk.y, mk.m, `${mk.y}년 ${mk.m}월`, a)
+    else pushTo('zzzz', 9999, 99, '날짜 미정', a)
+  })
+  // 각 월의 브랜드 순서 정렬
+  months.forEach(grp => grp.brands.sort((x, y) =>
+    (AT_BRAND_ORDER.indexOf(x.brand) < 0 ? 99 : AT_BRAND_ORDER.indexOf(x.brand)) -
+    (AT_BRAND_ORDER.indexOf(y.brand) < 0 ? 99 : AT_BRAND_ORDER.indexOf(y.brand))
+  ))
+
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
+  const toggle = (k: string) => setCollapsed(prev => { const n = new Set(prev); n.has(k) ? n.delete(k) : n.add(k); return n })
+
   return (
     <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
       <div className="px-4 py-2.5 border-b border-gray-100 flex items-center gap-2">
         <span className="text-gray-500">📋</span>
         <h3 className="text-sm font-bold text-gray-800">전체 활동 목록</h3>
-        <span className="ml-auto text-xs bg-gray-100 text-gray-600 rounded-full px-2 py-0.5">
-          {sorted.length > LIMIT && !expanded ? `${LIMIT} / ${sorted.length}건` : `${sorted.length}건`}
-        </span>
+        <span className="text-2xs text-gray-400">월별 · 브랜드별 정리</span>
+        <span className="ml-auto text-xs bg-gray-100 text-gray-600 rounded-full px-2 py-0.5">{sorted.length}건</span>
       </div>
-      <div className="overflow-x-auto">
-        <table className="w-full text-xs">
-          <thead>
-            <tr className="bg-gray-50 text-gray-400 text-left">
-              <th className="font-medium px-3 py-2">권역</th>
-              <th className="font-medium px-3 py-2">브랜드</th>
-              <th className="font-medium px-3 py-2">상품</th>
-              <th className="font-medium px-3 py-2">활동명</th>
-              <th className="font-medium px-3 py-2">유형</th>
-              <th className="font-medium px-3 py-2 whitespace-nowrap">기간</th>
-              <th className="font-medium px-3 py-2">상태</th>
-              <th className="font-medium px-3 py-2">담당</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-gray-50">
-            {sorted.length === 0 && (
-              <tr><td colSpan={8} className="px-3 py-8 text-center text-gray-400">표시할 활동이 없습니다</td></tr>
-            )}
-            {shown.map(a => {
-              const st = STATUS_STYLE[a.status]
-              const type = TYPE_STYLE[a.type] ?? 'bg-gray-400'
-              return (
-                <tr key={a.id} onClick={() => onSelect(a)} className="hover:bg-gray-50 cursor-pointer">
-                  <td className="px-3 py-2 text-gray-500 whitespace-nowrap">{a.region}</td>
-                  <td className="px-3 py-2 text-gray-500 whitespace-nowrap">{a.brand}</td>
-                  <td className="px-3 py-2 font-medium text-gray-700 whitespace-nowrap">
-                    {a.hero && <span className="text-pink-500 mr-0.5">★</span>}{a.product}
-                  </td>
-                  <td className="px-3 py-2 text-gray-700 max-w-[220px] truncate">
-                    {a.title}
-                    {a.issue && <span className="text-red-400 ml-1">⚠</span>}
-                  </td>
-                  <td className="px-3 py-2 whitespace-nowrap">
-                    <span className={`inline-flex items-center gap-1 text-gray-500`}>
-                      <span className={`w-2 h-2 rounded-sm ${type}`} />{a.type}
-                    </span>
-                  </td>
-                  <td className="px-3 py-2 text-gray-500 whitespace-nowrap">{fmtDate(a.startDate)}~{fmtDate(a.endDate)}</td>
-                  <td className="px-3 py-2 whitespace-nowrap">
-                    <span className={`text-2xs rounded-full px-2 py-0.5 ${st.bg} ${st.text}`}>{a.status}</span>
-                  </td>
-                  <td className="px-3 py-2 text-gray-500 whitespace-nowrap">{a.owner}</td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
-      </div>
-      {sorted.length > LIMIT && (
-        <button
-          onClick={() => setExpanded(v => !v)}
-          className="w-full py-2 text-2xs font-medium text-gray-500 hover:text-gray-700 hover:bg-gray-50 border-t border-gray-100"
-        >
-          {expanded ? '접기 ▲' : `전체 ${sorted.length}건 보기 ▼`}
-        </button>
+
+      {sorted.length === 0 && (
+        <div className="px-3 py-8 text-center text-gray-400 text-xs">표시할 활동이 없습니다 (필터 확인)</div>
       )}
+
+      <div className="divide-y divide-gray-100">
+        {months.map(grp => {
+          const isCol = collapsed.has(grp.key)
+          return (
+            <div key={grp.key}>
+              {/* 월 헤더 (클릭 시 접기) */}
+              <button
+                onClick={() => toggle(grp.key)}
+                className="w-full flex items-center gap-2 px-4 py-2 bg-gray-50/80 hover:bg-gray-100 sticky top-0 z-10 border-b border-gray-100"
+              >
+                <span className="text-gray-400 text-2xs">{isCol ? '▶' : '▼'}</span>
+                <span className="text-xs font-bold text-gray-700">{grp.label}</span>
+                <span className="text-2xs text-gray-400">{grp.total}건</span>
+                <div className="ml-auto flex items-center gap-1">
+                  {grp.brands.map(b => (
+                    <span key={b.brand} className="inline-flex items-center gap-1 text-2xs text-gray-400">
+                      <span className="w-2 h-2 rounded-full" style={{ background: AT_BRAND_COLOR[b.brand] ?? '#94a3b8' }} />{b.acts.length}
+                    </span>
+                  ))}
+                </div>
+              </button>
+
+              {!isCol && grp.brands.map(b => (
+                <div key={b.brand}>
+                  {/* 브랜드 소제목 */}
+                  <div className="flex items-center gap-1.5 px-4 py-1 bg-white">
+                    <span className="w-2.5 h-2.5 rounded-full" style={{ background: AT_BRAND_COLOR[b.brand] ?? '#94a3b8' }} />
+                    <span className="text-2xs font-bold text-gray-700">{b.brand}</span>
+                    <span className="text-2xs text-gray-300">{b.acts.length}건</span>
+                  </div>
+                  <table className="w-full text-xs">
+                    <tbody className="divide-y divide-gray-50">
+                      {b.acts.map(a => {
+                        const st = STATUS_STYLE[a.status]
+                        const cat = category(a)
+                        const catSty = CATEGORY_STYLE[cat]
+                        return (
+                          <tr key={a.id} onClick={() => onSelect(a)} className="hover:bg-gray-50 cursor-pointer">
+                            <td className="pl-7 pr-2 py-1.5 text-gray-400 whitespace-nowrap w-10">{a.region}</td>
+                            <td className="px-2 py-1.5 whitespace-nowrap w-16">
+                              <span className={`text-2xs rounded px-1.5 py-0.5 ${catSty.chip}`}>{cat}</span>
+                            </td>
+                            <td className="px-2 py-1.5 text-gray-700 max-w-[260px] truncate">
+                              {a.hero && <span className="text-pink-500 mr-0.5">★</span>}
+                              <span className="font-medium">{a.product || a.title}</span>
+                              {a.product && a.title && a.title !== a.product && <span className="text-gray-400"> · {a.title}</span>}
+                              {a.issue && <span className="text-red-400 ml-1">⚠</span>}
+                            </td>
+                            <td className="px-2 py-1.5 whitespace-nowrap">
+                              <span className="inline-flex items-center gap-1 text-gray-500 text-2xs">
+                                <span className={`w-2 h-2 rounded-sm ${TYPE_STYLE[a.type] ?? 'bg-gray-400'}`} />{a.type}
+                              </span>
+                            </td>
+                            <td className="px-2 py-1.5 text-gray-500 whitespace-nowrap text-2xs">{fmtDate(a.startDate)}~{fmtDate(a.endDate)}</td>
+                            <td className="px-2 py-1.5 whitespace-nowrap">
+                              <span className={`text-2xs rounded-full px-2 py-0.5 ${st.bg} ${st.text}`}>{a.status}</span>
+                            </td>
+                            <td className="px-2 py-1.5 pr-4 text-gray-400 whitespace-nowrap text-2xs">{a.owner}</td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              ))}
+            </div>
+          )
+        })}
+      </div>
     </div>
   )
 }

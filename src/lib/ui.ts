@@ -1,4 +1,22 @@
-import type { ActivityStatus, ActivityType } from './types'
+import type { ActivityStatus, ActivityType, GTMActivity } from './types'
+
+// ─── 활동 카테고리 (상품 / 온라인 / 오프라인) — 모든 뷰 공통 단일 소스 ───
+export type Category = '상품' | '온라인' | '오프라인'
+
+export function category(a: GTMActivity): Category {
+  if (a.type === '신제품출시' || a.type === '리뉴얼') return '상품'
+  const s = `${a.channel} ${a.market} ${a.title}`
+  if (/오프라인|돈키|로프트|loft|매장|팝업|타나와리|돈코스|코스페스|k코스/i.test(s)) return '오프라인'
+  return '온라인'
+}
+
+export const CATEGORY_STYLE: Record<Category, { dot: string; bar: string; bg: string; text: string; chip: string }> = {
+  '상품':   { dot: 'bg-violet-500', bar: 'border-l-violet-400', bg: 'bg-violet-50', text: 'text-violet-700', chip: 'bg-violet-100 text-violet-700' },
+  '온라인': { dot: 'bg-sky-500',    bar: 'border-l-sky-400',    bg: 'bg-sky-50',    text: 'text-sky-700',    chip: 'bg-sky-100 text-sky-700' },
+  '오프라인': { dot: 'bg-amber-500', bar: 'border-l-amber-400',  bg: 'bg-amber-50',  text: 'text-amber-700',  chip: 'bg-amber-100 text-amber-700' },
+}
+
+export const CATEGORY_ORDER: Category[] = ['상품', '온라인', '오프라인']
 
 export const STATUS_STYLE: Record<ActivityStatus, { bg: string; text: string; dot: string }> = {
   '기획':   { bg: 'bg-gray-100',   text: 'text-gray-600',   dot: 'bg-gray-400' },

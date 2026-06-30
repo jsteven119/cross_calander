@@ -3,11 +3,16 @@
 import { useMemo, useState } from 'react'
 import type { GTMData, GTMActivity } from '@/lib/types'
 import { detectConflicts, collectIssues, recentChanges } from '@/lib/conflicts'
-import { SwimlaneTimeline } from './SwimlaneTimeline'
+import { MonthCalendar } from './MonthCalendar'
 import { Filters, FilterState, emptyFilter } from './Filters'
 import { KpiStrip, AlertsPanel, DetailDrawer, ActivityTable } from './Panels'
 import { SeedingBoard } from './SeedingBoard'
 import { BrandMatrix } from './BrandMatrix'
+
+const startMonthOf = (d: string): number | null => {
+  const m = (d || '').match(/^\d{4}\D+(\d{1,2})/)
+  return m ? +m[1] : null
+}
 
 export function GTMDashboard({ data, lastRefreshed }: { data: GTMData; lastRefreshed: Date }) {
   const [filter, setFilter] = useState<FilterState>(emptyFilter())
@@ -20,6 +25,7 @@ export function GTMDashboard({ data, lastRefreshed }: { data: GTMData; lastRefre
       if (filter.brands.size && !filter.brands.has(a.brand)) return false
       if (filter.types.size && !filter.types.has(a.type)) return false
       if (filter.statuses.size && !filter.statuses.has(a.status)) return false
+      if (filter.months.size) { const mo = startMonthOf(a.startDate); if (mo === null || !filter.months.has(mo)) return false }
       if (filter.heroOnly && !a.hero) return false
       return true
     })
@@ -94,17 +100,12 @@ export function GTMDashboard({ data, lastRefreshed }: { data: GTMData; lastRefre
           )}
         </aside>
 
-        {/* 우측 콘텐츠 — 첫 사용자 기준 순서: 전체 일정 → 신상품 → EC프로모션 → 마케팅 → 시딩 → 상세 */}
+        {/* 우측 콘텐츠 — 첫 사용자 기준 순서: 이번 달 달력 → 브랜드 연간 → 시딩 → 목록/알림 */}
         <div className="flex-1 min-w-0 space-y-4">
-          {/* 1) 메인 타임라인 = 전체 일정 한 눈에 (핵심 뷰) */}
-          <SwimlaneTimeline
-            data={data}
-            activities={filtered}
-            highlightProduct={filter.product}
-            onSelect={setSelected}
-          />
+          {/* 1) 월 달력 = 이번 달 일정(날짜별, 상품/온라인/오프라인 색 구분) */}
+          <MonthCalendar activities={filtered} onSelect={setSelected} />
 
-          {/* 2) 브랜드별 활동 매트릭스 — 국가 × (상품/온라인/오프라인), 유형은 색으로 구분 */}
+          {/* 2) 브랜드별 연간 매트릭스 — 국가 × (상품/온라인/오프라인), 1년 조망 */}
           <BrandMatrix activities={filtered} onSelect={setSelected} />
 
           {/* 3) 인플루언서 시딩 스케줄 */}

@@ -1,7 +1,7 @@
 'use client'
 
 import type { GTMActivity } from '@/lib/types'
-import { TYPE_STYLE } from '@/lib/ui'
+import { TYPE_STYLE, category } from '@/lib/ui'
 
 const BRAND_COLOR: Record<string, string> = {
   바이오힐보: '#7C3AED', 웨이크메이크: '#DC2626', 컬러그램: '#DB2777',
@@ -18,13 +18,6 @@ function ym(d: string): { y: number; m: number; key: string } | null {
 }
 function trunc(s: string, n: number) { return s.length > n ? s.slice(0, n) + '…' : s }
 
-// 활동 → 카테고리 (상품 / 온라인 / 오프라인)
-function category(a: GTMActivity): '상품' | '온라인' | '오프라인' {
-  if (a.type === '신제품출시' || a.type === '리뉴얼') return '상품'
-  const s = `${a.channel} ${a.market} ${a.title}`
-  if (/오프라인|돈키|로프트|loft|매장|팝업|타나와리|돈코스|코스페스|k코스/i.test(s)) return '오프라인'
-  return '온라인'
-}
 function sortPresent(values: string[], order: string[]): string[] {
   const present = Array.from(new Set(values))
   return present.sort((a, b) => {
