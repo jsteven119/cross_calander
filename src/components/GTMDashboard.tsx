@@ -100,7 +100,7 @@ export function GTMDashboard({ data, lastRefreshed }: { data: GTMData; lastRefre
         </div>
       </div>
 
-      <KpiStrip data={data} conflicts={conflicts} issues={issues} />
+      <KpiStrip data={data} conflicts={conflicts} />
 
       {/* 메인 레이아웃: 좌측 필터 사이드바 + 우측 콘텐츠 */}
       <div className="flex gap-4 items-start">

@@ -44,6 +44,7 @@ const FIELD_ALIASES: Record<string, string[]> = {
   hero: ['hero', '히어로', '주력'],
   title: ['title', '행사명', '제목'],
   activity: ['activity', '활동'],
+  count: ['count', '건수', '건'],
   startDate: ['startdate', 'start_date', '시작일', '출시일', 'start'],
   endDate: ['enddate', 'end_date', '종료일', 'end'],
   status: ['status', '상태'],
@@ -174,6 +175,7 @@ export async function fetchGTMData(): Promise<GTMData> {
           hero: toBool(g(r, 'hero')),
           title: g(r, 'title') || g(r, 'product'),
           activity: g(r, 'activity'),
+          count: g(r, 'count'),
           startDate: normDate(g(r, 'startDate')),
           endDate: normDate(g(r, 'endDate')) || normDate(g(r, 'startDate')),
           status: (g(r, 'status') || '기획') as ActivityStatus,
@@ -212,14 +214,14 @@ export function getSampleData(): GTMData {
     { id: 'S-0002', region: '미국', brand: '웨이크메이크', org: '글로벌 마케팅', team: '미국마케팅', owner: 'Sarah K', channel: '온라인', retail: '아마존', media: '틱톡', type: '프로모션', product: '헬로키티 컬렉션', hero: true, title: 'Hello Kitty US Amazon Deal', activity: 'Amazon Prime Day 딜', startDate: '2026-07-20', endDate: '2026-08-15', status: '확정', budget: '$120K', updatedBy: 'Sarah K' },
     { id: 'S-0003', region: '중국', brand: '웨이크메이크', org: '글로벌 마케팅', team: '중국마케팅', owner: '王伟', channel: '온라인', retail: '기타', media: '기타', type: '프로모션', product: '래스팅 글로우 스틱', hero: true, title: '티몰 메가세일', activity: 'KOL 라이브 3회', startDate: '2026-08-01', endDate: '2026-08-20', status: '확정', budget: '2억', updatedBy: '王伟' },
     { id: 'S-0005', region: '일본', brand: '컬러그램', org: '일본법인', team: '일본마케팅', owner: '佐藤', channel: '온라인', retail: 'Qoo10', media: 'X', type: '프로모션', product: '누드 스탠다드', hero: false, title: 'RE:NUDE 큐텐 메가와리', activity: '메가와리 D2 라이브', startDate: '2026-09-01', endDate: '2026-09-15', status: '기획', budget: '¥8M', updatedBy: '佐藤' },
-    { id: 'S-0009', region: '일본', brand: '바이오힐보', org: '일본법인', team: '일본마케팅', owner: '佐藤', channel: '오프라인', retail: '@cosme', media: '인스타그램', type: '바이럴', product: 'NAD 크림', hero: true, title: '@cosme 신상 푸시', activity: '앳코스메 매장 시딩', startDate: '2026-09-10', endDate: '2026-09-30', status: '기획', budget: '¥5M', updatedBy: '佐藤' },
+    { id: 'S-0009', region: '일본', brand: '바이오힐보', org: '일본법인', team: '일본마케팅', owner: '佐藤', channel: '오프라인', retail: '@cosme', media: '인스타그램', type: '바이럴', product: 'NAD 크림', hero: true, title: '@cosme 신상 푸시', activity: '앳코스메 매장 시딩', count: '30', startDate: '2026-09-10', endDate: '2026-09-30', status: '기획', budget: '¥5M', updatedBy: '佐藤' },
   ]
   const now = new Date()
   const activities: GTMActivity[] = raw.map((a, i) => ({
     id: a.id!, region: a.region || '', brand: a.brand || '', org: a.org || '', team: a.team || '',
     owner: a.owner || '', channel: a.channel || '', retail: a.retail || '', media: a.media || '',
     type: (a.type || '프로모션') as ActivityType, product: a.product || '',
-    hero: a.hero ?? false, title: a.title || '', activity: a.activity || '',
+    hero: a.hero ?? false, title: a.title || '', activity: a.activity || '', count: a.count || '',
     startDate: a.startDate || '', endDate: a.endDate || a.startDate || '',
     status: (a.status || '기획') as ActivityStatus, budget: a.budget || '',
     market: a.retail || '', issue: a.issue || '', riskLevel: (a.riskLevel || '') as RiskLevel,

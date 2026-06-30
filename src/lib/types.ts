@@ -37,6 +37,7 @@ export interface GTMActivity {
   hero: boolean         // 주력상품 여부
   title: string         // 행사명
   activity: string      // 활동 (자유서술 — 구체 실행내용)
+  count: string         // 건수 (바이럴 실행 수 — 시딩/포스팅/인플루언서 수)
   startDate: string     // YYYY-MM-DD
   endDate: string       // YYYY-MM-DD
   status: ActivityStatus

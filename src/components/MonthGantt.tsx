@@ -201,6 +201,7 @@ export function MonthGantt({ activities, cursor, setCursor, onSelect }: Props) {
                           {contBefore && <span className="text-gray-400 text-2xs shrink-0">◀</span>}
                           {a.hero && <span className="text-pink-500 text-2xs shrink-0 leading-none">★</span>}
                           <span className={`text-[10px] leading-tight truncate ${catSty.text}`}>{trunc(a.product || a.title, 18)}</span>
+                          {a.count && <span className="text-[9px] text-rose-600 shrink-0 font-semibold">×{a.count}</span>}
                           {a.issue && <span className="text-red-400 text-2xs shrink-0">⚠</span>}
                           {contAfter && <span className="text-gray-400 text-2xs shrink-0 ml-auto">▶</span>}
                         </button>

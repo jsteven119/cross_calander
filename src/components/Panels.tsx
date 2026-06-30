@@ -5,16 +5,19 @@ import type { GTMActivity, Conflict, GTMData, Region } from '@/lib/types'
 import { STATUS_STYLE, RISK_STYLE, TYPE_STYLE, fmtDate, fmtRelTime, category, CATEGORY_STYLE, fromMonthKey, intersectsMonth, parseYMD } from '@/lib/ui'
 
 // ─── KPI 요약 스트립 ──────────────────────────────
-export function KpiStrip({ data, conflicts, issues }: { data: GTMData; conflicts: Conflict[]; issues: GTMActivity[] }) {
+export function KpiStrip({ data, conflicts }: { data: GTMData; conflicts: Conflict[] }) {
   const live = data.activities.filter(a => a.status === '진행중').length
   const heroLaunch = data.activities.filter(a => a.hero && a.type === '신상품' && a.status !== '취소').length
-  const highRisk = issues.filter(i => i.riskLevel === '상').length
+  // 바이럴 건수 = 바이럴 활동들의 건수 합 (시딩/포스팅/인플루언서 수)
+  const viralCount = data.activities
+    .filter(a => a.type === '바이럴')
+    .reduce((s, a) => s + (parseInt(String(a.count).replace(/[^\d]/g, ''), 10) || 0), 0)
 
   const cards = [
     { label: '진행중 활동', value: live, tone: 'text-green-600' },
     { label: '주력 런칭', value: heroLaunch, tone: 'text-pink-600' },
+    { label: '바이럴 건수', value: viralCount, tone: viralCount ? 'text-rose-600' : 'text-gray-400' },
     { label: '상품 충돌', value: conflicts.length, tone: conflicts.length ? 'text-orange-600' : 'text-gray-400' },
-    { label: '고위험 이슈', value: highRisk, tone: highRisk ? 'text-red-600' : 'text-gray-400' },
   ]
   return (
     <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
@@ -330,6 +333,7 @@ export function ActivityTable({ activities, cursor, onSelect }: { activities: GT
                           {a.hero && <span className="text-pink-500 mr-0.5">★</span>}
                           <span className="font-medium">{a.product || a.title}</span>
                           {a.product && a.title && a.title !== a.product && <span className="text-gray-400"> · {a.title}</span>}
+                          {a.count && <span className="text-rose-500 text-2xs ml-1 font-semibold">×{a.count}</span>}
                           {a.issue && <span className="text-red-400 ml-1">⚠</span>}
                         </td>
                         <td className="px-2 py-1.5 whitespace-nowrap">
@@ -372,6 +376,7 @@ export function DetailDrawer({ activity, onClose }: { activity: GTMActivity | nu
     ['목적/유형', activity.type],
     ['상품', activity.product + (activity.hero ? ' ★주력' : '')],
     ['활동', activity.activity],
+    ['건수', activity.count],
     ['기간', `${fmtDate(activity.startDate)} ~ ${fmtDate(activity.endDate)}`],
     ['예산', activity.budget],
     ['담당', `${activity.team} / ${activity.owner}`],
