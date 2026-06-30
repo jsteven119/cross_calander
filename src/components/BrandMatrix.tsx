@@ -44,7 +44,7 @@ export function BrandMatrix({ activities, onSelect }: { activities: GTMActivity[
         <span className="ml-auto text-xs bg-gray-100 text-gray-600 rounded-full px-2 py-0.5">{acts.length}건</span>
         {/* 유형 범례 */}
         <div className="w-full flex items-center gap-3 text-2xs text-gray-400 mt-0.5">
-          {(['신제품출시', '프로모션', '캠페인', '채널행사'] as const).map(t => (
+          {(['프로모션', '바이럴', '신상품', '상시'] as const).map(t => (
             <span key={t} className="inline-flex items-center gap-1">
               <span className={`w-2 h-2 rounded-sm ${TYPE_STYLE[t] ?? 'bg-gray-400'}`} />{t}
             </span>

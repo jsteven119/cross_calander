@@ -2,12 +2,12 @@
 
 import { useState } from 'react'
 import type { GTMActivity, Conflict, GTMData, Region } from '@/lib/types'
-import { STATUS_STYLE, RISK_STYLE, TYPE_STYLE, fmtDate, fmtRelTime, category, CATEGORY_STYLE } from '@/lib/ui'
+import { STATUS_STYLE, RISK_STYLE, TYPE_STYLE, fmtDate, fmtRelTime, category, CATEGORY_STYLE, fromMonthKey, intersectsMonth, parseYMD } from '@/lib/ui'
 
 // ─── KPI 요약 스트립 ──────────────────────────────
 export function KpiStrip({ data, conflicts, issues }: { data: GTMData; conflicts: Conflict[]; issues: GTMActivity[] }) {
   const live = data.activities.filter(a => a.status === '진행중').length
-  const heroLaunch = data.activities.filter(a => a.hero && a.type === '신제품출시' && a.status !== '취소').length
+  const heroLaunch = data.activities.filter(a => a.hero && a.type === '신상품' && a.status !== '취소').length
   const highRisk = issues.filter(i => i.riskLevel === '상').length
 
   const cards = [
@@ -264,129 +264,96 @@ export function ECPromotionBoard({ regions, activities, onSelect }: { regions: R
   )
 }
 
-// ─── 전체 활동 목록 (월별 → 브랜드별 그룹) ──────────────
+// ─── 당월 활동 목록 (현재 보는 달 · 브랜드별) ──────────────
 const AT_BRAND_ORDER = ['바이오힐보', '웨이크메이크', '컬러그램', '브링그린', '올리브영']
 const AT_BRAND_COLOR: Record<string, string> = {
   바이오힐보: '#7C3AED', 웨이크메이크: '#DC2626', 컬러그램: '#DB2777', 브링그린: '#16A34A', 올리브영: '#65A30D',
 }
-function atMonthKey(d: string): { key: string; y: number; m: number } | null {
-  const mm = (d || '').match(/^(\d{4})\D+(\d{1,2})/)
-  return mm ? { key: `${mm[1]}-${String(+mm[2]).padStart(2, '0')}`, y: +mm[1], m: +mm[2] } : null
-}
 
-export function ActivityTable({ activities, onSelect }: { activities: GTMActivity[]; onSelect: (a: GTMActivity) => void }) {
-  // 시작일 있는 것만 그룹핑, 나머지(날짜 미입력)는 '미정'으로 묶음
-  const sorted = [...activities].sort((a, b) => (a.startDate < b.startDate ? -1 : a.startDate > b.startDate ? 1 : 0))
+export function ActivityTable({ activities, cursor, onSelect }: { activities: GTMActivity[]; cursor: number; onSelect: (a: GTMActivity) => void }) {
+  const { y: curY, m: curM } = fromMonthKey(cursor)
 
-  // 월 → 브랜드 → 활동 으로 그룹
-  const months: { key: string; y: number; m: number; label: string; total: number; brands: { brand: string; acts: GTMActivity[] }[] }[] = []
-  const monthIndex = new Map<string, number>()
-  const pushTo = (key: string, y: number, m: number, label: string, a: GTMActivity) => {
-    let idx = monthIndex.get(key)
-    if (idx === undefined) { idx = months.length; monthIndex.set(key, idx); months.push({ key, y, m, label, total: 0, brands: [] }) }
-    const grp = months[idx]
-    grp.total++
+  // 이번 달에 걸쳐 있는 활동만 (시작·진행·이월 포함), 브랜드별 그룹
+  const monthActs = activities
+    .filter(a => intersectsMonth(a, cursor))
+    .sort((a, b) => (a.startDate < b.startDate ? -1 : a.startDate > b.startDate ? 1 : 0))
+
+  const brands: { brand: string; acts: GTMActivity[] }[] = []
+  monthActs.forEach(a => {
     const brand = a.brand || '기타'
-    let b = grp.brands.find(x => x.brand === brand)
-    if (!b) { b = { brand, acts: [] }; grp.brands.push(b) }
-    b.acts.push(a)
-  }
-  sorted.forEach(a => {
-    const mk = atMonthKey(a.startDate)
-    if (mk) pushTo(mk.key, mk.y, mk.m, `${mk.y}년 ${mk.m}월`, a)
-    else pushTo('zzzz', 9999, 99, '날짜 미정', a)
+    let g = brands.find(x => x.brand === brand)
+    if (!g) { g = { brand, acts: [] }; brands.push(g) }
+    g.acts.push(a)
   })
-  // 각 월의 브랜드 순서 정렬
-  months.forEach(grp => grp.brands.sort((x, y) =>
+  brands.sort((x, y) =>
     (AT_BRAND_ORDER.indexOf(x.brand) < 0 ? 99 : AT_BRAND_ORDER.indexOf(x.brand)) -
     (AT_BRAND_ORDER.indexOf(y.brand) < 0 ? 99 : AT_BRAND_ORDER.indexOf(y.brand))
-  ))
+  )
 
-  const [collapsed, setCollapsed] = useState<Set<string>>(new Set())
-  const toggle = (k: string) => setCollapsed(prev => { const n = new Set(prev); n.has(k) ? n.delete(k) : n.add(k); return n })
+  // 이월 여부 (시작이 이번 달보다 이전)
+  const carriedIn = (a: GTMActivity) => { const s = parseYMD(a.startDate); return !!s && (s.y * 12 + (s.m - 1)) < cursor }
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
       <div className="px-4 py-2.5 border-b border-gray-100 flex items-center gap-2">
         <span className="text-gray-500">📋</span>
-        <h3 className="text-sm font-bold text-gray-800">전체 활동 목록</h3>
-        <span className="text-2xs text-gray-400">월별 · 브랜드별 정리</span>
-        <span className="ml-auto text-xs bg-gray-100 text-gray-600 rounded-full px-2 py-0.5">{sorted.length}건</span>
+        <h3 className="text-sm font-bold text-gray-800">당월 활동 목록</h3>
+        <span className="text-2xs text-gray-400">{curY}년 {curM}월 · 브랜드별</span>
+        <span className="ml-auto text-xs bg-gray-100 text-gray-600 rounded-full px-2 py-0.5">{monthActs.length}건</span>
       </div>
 
-      {sorted.length === 0 && (
-        <div className="px-3 py-8 text-center text-gray-400 text-xs">표시할 활동이 없습니다 (필터 확인)</div>
-      )}
-
-      <div className="divide-y divide-gray-100">
-        {months.map(grp => {
-          const isCol = collapsed.has(grp.key)
-          return (
-            <div key={grp.key}>
-              {/* 월 헤더 (클릭 시 접기) */}
-              <button
-                onClick={() => toggle(grp.key)}
-                className="w-full flex items-center gap-2 px-4 py-2 bg-gray-50/80 hover:bg-gray-100 sticky top-0 z-10 border-b border-gray-100"
-              >
-                <span className="text-gray-400 text-2xs">{isCol ? '▶' : '▼'}</span>
-                <span className="text-xs font-bold text-gray-700">{grp.label}</span>
-                <span className="text-2xs text-gray-400">{grp.total}건</span>
-                <div className="ml-auto flex items-center gap-1">
-                  {grp.brands.map(b => (
-                    <span key={b.brand} className="inline-flex items-center gap-1 text-2xs text-gray-400">
-                      <span className="w-2 h-2 rounded-full" style={{ background: AT_BRAND_COLOR[b.brand] ?? '#94a3b8' }} />{b.acts.length}
-                    </span>
-                  ))}
-                </div>
-              </button>
-
-              {!isCol && grp.brands.map(b => (
-                <div key={b.brand}>
-                  {/* 브랜드 소제목 */}
-                  <div className="flex items-center gap-1.5 px-4 py-1 bg-white">
-                    <span className="w-2.5 h-2.5 rounded-full" style={{ background: AT_BRAND_COLOR[b.brand] ?? '#94a3b8' }} />
-                    <span className="text-2xs font-bold text-gray-700">{b.brand}</span>
-                    <span className="text-2xs text-gray-300">{b.acts.length}건</span>
-                  </div>
-                  <table className="w-full text-xs">
-                    <tbody className="divide-y divide-gray-50">
-                      {b.acts.map(a => {
-                        const st = STATUS_STYLE[a.status]
-                        const cat = category(a)
-                        const catSty = CATEGORY_STYLE[cat]
-                        return (
-                          <tr key={a.id} onClick={() => onSelect(a)} className="hover:bg-gray-50 cursor-pointer">
-                            <td className="pl-7 pr-2 py-1.5 text-gray-400 whitespace-nowrap w-10">{a.region}</td>
-                            <td className="px-2 py-1.5 whitespace-nowrap w-16">
-                              <span className={`text-2xs rounded px-1.5 py-0.5 ${catSty.chip}`}>{cat}</span>
-                            </td>
-                            <td className="px-2 py-1.5 text-gray-700 max-w-[260px] truncate">
-                              {a.hero && <span className="text-pink-500 mr-0.5">★</span>}
-                              <span className="font-medium">{a.product || a.title}</span>
-                              {a.product && a.title && a.title !== a.product && <span className="text-gray-400"> · {a.title}</span>}
-                              {a.issue && <span className="text-red-400 ml-1">⚠</span>}
-                            </td>
-                            <td className="px-2 py-1.5 whitespace-nowrap">
-                              <span className="inline-flex items-center gap-1 text-gray-500 text-2xs">
-                                <span className={`w-2 h-2 rounded-sm ${TYPE_STYLE[a.type] ?? 'bg-gray-400'}`} />{a.type}
-                              </span>
-                            </td>
-                            <td className="px-2 py-1.5 text-gray-500 whitespace-nowrap text-2xs">{fmtDate(a.startDate)}~{fmtDate(a.endDate)}</td>
-                            <td className="px-2 py-1.5 whitespace-nowrap">
-                              <span className={`text-2xs rounded-full px-2 py-0.5 ${st.bg} ${st.text}`}>{a.status}</span>
-                            </td>
-                            <td className="px-2 py-1.5 pr-4 text-gray-400 whitespace-nowrap text-2xs">{a.owner}</td>
-                          </tr>
-                        )
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              ))}
+      {monthActs.length === 0 ? (
+        <div className="px-3 py-8 text-center text-gray-400 text-xs">{curM}월에 예정된 활동이 없습니다 (위 간트의 ◀ ▶ 로 달 이동)</div>
+      ) : (
+        <div className="divide-y divide-gray-100">
+          {brands.map(b => (
+            <div key={b.brand}>
+              {/* 브랜드 소제목 */}
+              <div className="flex items-center gap-1.5 px-4 py-1 bg-gray-50/70">
+                <span className="w-2.5 h-2.5 rounded-full" style={{ background: AT_BRAND_COLOR[b.brand] ?? '#94a3b8' }} />
+                <span className="text-2xs font-bold text-gray-700">{b.brand}</span>
+                <span className="text-2xs text-gray-300">{b.acts.length}건</span>
+              </div>
+              <table className="w-full text-xs">
+                <tbody className="divide-y divide-gray-50">
+                  {b.acts.map(a => {
+                    const st = STATUS_STYLE[a.status]
+                    const cat = category(a)
+                    const catSty = CATEGORY_STYLE[cat]
+                    return (
+                      <tr key={a.id} onClick={() => onSelect(a)} className="hover:bg-gray-50 cursor-pointer">
+                        <td className="pl-6 pr-2 py-1.5 text-gray-400 whitespace-nowrap w-10">{a.region}</td>
+                        <td className="px-2 py-1.5 whitespace-nowrap w-16">
+                          <span className={`text-2xs rounded px-1.5 py-0.5 ${catSty.chip}`}>{cat}</span>
+                        </td>
+                        <td className="px-2 py-1.5 text-gray-700 max-w-[260px] truncate">
+                          {a.hero && <span className="text-pink-500 mr-0.5">★</span>}
+                          <span className="font-medium">{a.product || a.title}</span>
+                          {a.product && a.title && a.title !== a.product && <span className="text-gray-400"> · {a.title}</span>}
+                          {a.issue && <span className="text-red-400 ml-1">⚠</span>}
+                        </td>
+                        <td className="px-2 py-1.5 whitespace-nowrap">
+                          <span className="inline-flex items-center gap-1 text-gray-500 text-2xs">
+                            <span className={`w-2 h-2 rounded-sm ${TYPE_STYLE[a.type] ?? 'bg-gray-400'}`} />{a.type}
+                          </span>
+                        </td>
+                        <td className="px-2 py-1.5 text-gray-500 whitespace-nowrap text-2xs">
+                          {carriedIn(a) && <span className="text-gray-300 mr-0.5">◀</span>}
+                          {fmtDate(a.startDate)}~{fmtDate(a.endDate)}
+                        </td>
+                        <td className="px-2 py-1.5 whitespace-nowrap">
+                          <span className={`text-2xs rounded-full px-2 py-0.5 ${st.bg} ${st.text}`}>{a.status}</span>
+                        </td>
+                        <td className="px-2 py-1.5 pr-4 text-gray-400 whitespace-nowrap text-2xs">{a.owner}</td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
             </div>
-          )
-        })}
-      </div>
+          ))}
+        </div>
+      )}
     </div>
   )
 }
@@ -398,11 +365,14 @@ export function DetailDrawer({ activity, onClose }: { activity: GTMActivity | nu
   const rows: [string, string][] = [
     ['권역', activity.region],
     ['브랜드', activity.brand],
-    ['세부 시장', activity.market],
-    ['상품', activity.product + (activity.hero ? ' ★주력' : '')],
-    ['유형', activity.type],
-    ['기간', `${fmtDate(activity.startDate)} ~ ${fmtDate(activity.endDate)}`],
+    ['주관', activity.org],
     ['채널', activity.channel],
+    ['Retail', activity.retail],
+    ['매체', activity.media],
+    ['목적/유형', activity.type],
+    ['상품', activity.product + (activity.hero ? ' ★주력' : '')],
+    ['활동', activity.activity],
+    ['기간', `${fmtDate(activity.startDate)} ~ ${fmtDate(activity.endDate)}`],
     ['예산', activity.budget],
     ['담당', `${activity.team} / ${activity.owner}`],
   ]

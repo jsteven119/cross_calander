@@ -1,13 +1,13 @@
 // ─── GTM 캘린더 데이터 모델 ───────────────────────────────
 // 핵심 원칙: "한 줄 = 한 활동(activity)". 여러 팀/권역이 행 단위로 입력.
 
+// 목적(유형) — 팀 탭 '목적' 컬럼. 구 6종(신제품출시/캠페인/채널행사/리뉴얼/단종)은
+// google-sheets.ts 의 TYPE_NORMALIZE 로 이 4종에 매핑된다.
 export type ActivityType =
-  | '신제품출시'
   | '프로모션'
-  | '캠페인'
-  | '채널행사'
-  | '리뉴얼'
-  | '단종'
+  | '바이럴'
+  | '신상품'
+  | '상시'
 
 export type ActivityStatus =
   | '기획'
@@ -24,23 +24,27 @@ export const BRANDS = ['웨이크메이크', '컬러그램', '바이오힐보'] 
 
 export interface GTMActivity {
   id: string
-  region: string        // 권역 (국내/미주/중화권/일본)
-  brand: string         // 브랜드 (웨이크메이크/컬러그램/바이오힐보)
-  market: string        // 세부 국가·채널 (미국-아마존 등)
-  team: string          // 입력 팀
+  region: string        // 권역 (국내/일본/중국/미국/전사) — 팀 탭에서 자동 태깅
+  brand: string         // 브랜드 (웨이크메이크/컬러그램/바이오힐보 …)
+  org: string           // 주관 (일본법인/글로벌 마케팅/오프라인 영업팀)
+  team: string          // 입력 팀(탭)
   owner: string         // 담당자
-  type: ActivityType
+  channel: string       // 채널 (온라인 / 오프라인)
+  retail: string        // 리테일 (Qoo10/RKT/올리브영/아마존/@cosme/LOFT …)
+  media: string         // 온드미디어 (인스타/틱톡/X/유튜브)
+  type: ActivityType    // 목적/유형 (프로모션/바이럴/신상품/상시)
   product: string       // 상품/라인명
   hero: boolean         // 주력상품 여부
-  title: string         // 활동명
+  title: string         // 행사명
+  activity: string      // 활동 (자유서술 — 구체 실행내용)
   startDate: string     // YYYY-MM-DD
   endDate: string       // YYYY-MM-DD
   status: ActivityStatus
   budget: string        // 예산 (자유 텍스트, 예: 1.5억)
-  channel: string       // 채널
-  issue: string         // 이슈/리스크 내용
-  riskLevel: RiskLevel  // 이슈 심각도
-  updatedAt: string     // 자동 갱신 (ISO)
+  market: string        // (deprecated) 구 세부시장 — 하위호환용, 신규 입력 없음
+  issue: string         // 이슈/리스크 내용 (입력폼 제외·optional)
+  riskLevel: RiskLevel  // 이슈 심각도 (optional)
+  updatedAt: string     // 자동 갱신 (ISO/yyyy-MM-dd HH:mm)
   updatedBy: string     // 자동 기입
 }
 

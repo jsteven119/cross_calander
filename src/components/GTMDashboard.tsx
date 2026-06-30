@@ -1,9 +1,10 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useMemo, useState, useEffect } from 'react'
 import type { GTMData, GTMActivity } from '@/lib/types'
 import { detectConflicts, collectIssues, recentChanges } from '@/lib/conflicts'
-import { MonthCalendar } from './MonthCalendar'
+import { pickInitialMonth, monthKey, fromMonthKey } from '@/lib/ui'
+import { MonthGantt } from './MonthGantt'
 import { Filters, FilterState, emptyFilter } from './Filters'
 import { KpiStrip, AlertsPanel, DetailDrawer, ActivityTable } from './Panels'
 import { SeedingBoard } from './SeedingBoard'
@@ -17,12 +18,26 @@ const startMonthOf = (d: string): number | null => {
 export function GTMDashboard({ data, lastRefreshed }: { data: GTMData; lastRefreshed: Date }) {
   const [filter, setFilter] = useState<FilterState>(emptyFilter())
   const [selected, setSelected] = useState<GTMActivity | null>(null)
+  // 간트·당월목록이 공유하는 "보는 달"
+  const [monthCursor, setMonthCursor] = useState<number>(() => pickInitialMonth(data.activities))
+
+  // 사이드바 '월' 필터를 켜면 간트도 그 달로 이동 (빈 화면 방지)
+  useEffect(() => {
+    if (filter.months.size === 0) return
+    const curM = fromMonthKey(monthCursor).m
+    if (!filter.months.has(curM)) {
+      const target = Math.min(...Array.from(filter.months))
+      setMonthCursor(monthKey(data.year, target))
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filter.months])
 
   // 필터 적용 (빈 Set = 전체)
   const filtered = useMemo(() => {
     return data.activities.filter(a => {
       if (filter.regions.size && !filter.regions.has(a.region)) return false
       if (filter.brands.size && !filter.brands.has(a.brand)) return false
+      if (filter.retails.size && !filter.retails.has(a.retail)) return false
       if (filter.types.size && !filter.types.has(a.type)) return false
       if (filter.statuses.size && !filter.statuses.has(a.status)) return false
       if (filter.months.size) { const mo = startMonthOf(a.startDate); if (mo === null || !filter.months.has(mo)) return false }
@@ -100,10 +115,10 @@ export function GTMDashboard({ data, lastRefreshed }: { data: GTMData; lastRefre
           )}
         </aside>
 
-        {/* 우측 콘텐츠 — 첫 사용자 기준 순서: 이번 달 달력 → 브랜드 연간 → 시딩 → 목록/알림 */}
+        {/* 우측 콘텐츠 — 첫 사용자 기준 순서: 월 간트 → 브랜드 연간 → 시딩 → 당월목록/알림 */}
         <div className="flex-1 min-w-0 space-y-4">
-          {/* 1) 월 달력 = 이번 달 일정(날짜별, 상품/온라인/오프라인 색 구분) */}
-          <MonthCalendar activities={filtered} onSelect={setSelected} />
+          {/* 1) 월 간트 = 이번 달 행사 기간 타임라인(브랜드×구분, 막대=기간) */}
+          <MonthGantt activities={filtered} cursor={monthCursor} setCursor={setMonthCursor} onSelect={setSelected} />
 
           {/* 2) 브랜드별 연간 매트릭스 — 국가 × (상품/온라인/오프라인), 1년 조망 */}
           <BrandMatrix activities={filtered} onSelect={setSelected} />
@@ -114,7 +129,7 @@ export function GTMDashboard({ data, lastRefreshed }: { data: GTMData; lastRefre
           {/* 활동 목록 + 알림 패널 */}
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-4">
             <div className="xl:col-span-2">
-              <ActivityTable activities={filtered} onSelect={setSelected} />
+              <ActivityTable activities={filtered} cursor={monthCursor} onSelect={setSelected} />
             </div>
             <div>
               <AlertsPanel

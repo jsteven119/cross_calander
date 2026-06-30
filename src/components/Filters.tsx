@@ -6,6 +6,7 @@ import { BRANDS } from '@/lib/types'
 export interface FilterState {
   regions: Set<string>
   brands: Set<string>
+  retails: Set<string>     // 리테일 (Qoo10/RKT/@cosme …)
   types: Set<string>
   statuses: Set<string>
   months: Set<number>      // 시작월 (1~12)
@@ -19,7 +20,7 @@ interface Props {
   setFilter: (f: FilterState) => void
 }
 
-const TYPES: ActivityType[] = ['신제품출시', '프로모션', '캠페인', '채널행사', '리뉴얼', '단종']
+const TYPES: ActivityType[] = ['프로모션', '바이럴', '신상품', '상시']
 const STATUSES: ActivityStatus[] = ['기획', '확정', '진행중', '완료', '보류', '취소']
 
 function Chip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
@@ -62,9 +63,10 @@ function Section({ label, children }: { label: string; children: React.ReactNode
 
 export function Filters({ data, filter, setFilter }: Props) {
   const products = Array.from(new Set(data.activities.map(a => a.product).filter(Boolean))).sort()
+  const retails = Array.from(new Set(data.activities.map(a => a.retail).filter(Boolean))).sort()
   // 데이터에 실제로 존재하는 시작월만 칩으로 노출
   const months = Array.from(new Set(data.activities.map(a => startMonth(a.startDate)).filter((m): m is number => m !== null))).sort((a, b) => a - b)
-  const hasFilter = filter.regions.size || filter.brands.size || filter.types.size || filter.statuses.size || filter.months.size || filter.heroOnly || filter.product
+  const hasFilter = filter.regions.size || filter.brands.size || filter.retails.size || filter.types.size || filter.statuses.size || filter.months.size || filter.heroOnly || filter.product
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg px-3 py-3 space-y-3">
@@ -103,6 +105,16 @@ export function Filters({ data, filter, setFilter }: Props) {
           </Chip>
         ))}
       </Section>
+
+      {retails.length > 0 && (
+        <Section label="리테일">
+          {retails.map(rt => (
+            <Chip key={rt} active={filter.retails.has(rt)} onClick={() => setFilter({ ...filter, retails: toggle(filter.retails, rt) })}>
+              {rt}
+            </Chip>
+          ))}
+        </Section>
+      )}
 
       <Section label="유형">
         {TYPES.map(t => (
@@ -147,5 +159,5 @@ export function Filters({ data, filter, setFilter }: Props) {
 }
 
 export function emptyFilter(): FilterState {
-  return { regions: new Set(), brands: new Set(), types: new Set(), statuses: new Set(), months: new Set(), heroOnly: false, product: null }
+  return { regions: new Set(), brands: new Set(), retails: new Set(), types: new Set(), statuses: new Set(), months: new Set(), heroOnly: false, product: null }
 }
