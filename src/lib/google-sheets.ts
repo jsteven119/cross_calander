@@ -67,6 +67,17 @@ function normType(v: unknown): ActivityType {
   return TYPE_NORMALIZE[s] || '프로모션'
 }
 
+// 히어로(주력) 제품 위계 — 브랜드별 패턴. 제품/행사명이 매칭되면 hero=Y (유사표기 포함)
+const HERO_PATTERNS: Record<string, RegExp> = {
+  '바이오힐보': /아사[츄추]|요루탄|3D\s*크림|3d크림|탄력\s*크림|콜라겐\s*겔?\s*미스트|(NAD|엔에이디|콜라겐)\s*아이\s*크림/i,
+  '웨이크메이크': /소프트\s*블러링|소블아|심리스\s*(파운데이션|파데)|쉐이킹\s*블러|볼드\s*블러/i,
+  '컬러그램': /컬러?\s*커버\s*틴트|컬커버|커버틴트|딥\s*글레이즈|딥글/i,
+}
+function isHeroProduct(brand: string, text: string): boolean {
+  const re = HERO_PATTERNS[(brand || '').trim()]
+  return re ? re.test(text || '') : false
+}
+
 function txt(v: unknown): string {
   return v === null || v === undefined ? '' : String(v).trim()
 }
@@ -172,7 +183,7 @@ export async function fetchGTMData(): Promise<GTMData> {
           media: g(r, 'media'),
           type: normType(g(r, 'type')),
           product: g(r, 'product'),
-          hero: toBool(g(r, 'hero')),
+          hero: toBool(g(r, 'hero')) || isHeroProduct(g(r, 'brand'), `${g(r, 'product')} ${g(r, 'title')}`),
           title: g(r, 'title') || g(r, 'product'),
           activity: g(r, 'activity'),
           count: g(r, 'count'),
